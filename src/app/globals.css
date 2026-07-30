@@ -1,26 +1,309 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ===========================================================================
+   Ajaia Docs — "editorial paper"
+   ---------------------------------------------------------------------------
+   A writing tool should feel like stationery, not like a dashboard. The system
+   is warm paper stock, ink-dark type, and one restrained accent: a deep press
+   green rather than the SaaS-default blue or violet.
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+   Two typefaces, and the split carries meaning rather than decoration:
+     Newsreader (serif)  — the document canvas and the wordmark. It is a
+                           reading face, so the thing being written looks like
+                           something worth reading.
+     Instrument Sans     — the chrome around it. Quiet, so it recedes.
+
+   Everything below is a token. editor.css already consumes these exact names
+   through var(--token, fallback), so restyling the editor is a token swap
+   rather than a rewrite.
+   =========================================================================== */
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces — warm, never neutral grey. The page is the desk; the sheet is
+     the paper lying on it. */
+  --canvas: #f4f1ea;
+  --surface-subtle: #efebe2;
+  --sheet: #fffdf9;
+  --sheet-raised: #ffffff;
+
+  /* Ink */
+  --text-primary: #1c1a16;
+  --text-secondary: #55504a;
+  --text-muted: #8a837a;
+
+  /* Rules and edges */
+  --border: #ded7ca;
+  --border-strong: #c3b9a7;
+
+  /* One accent, spent sparingly: primary actions and active editor state. */
+  --accent: #2f5d4f;
+  --accent-hover: #26493e;
+  --accent-soft: #e3ece7;
+  --accent-contrast: #fffdf9;
+
+  --danger: #9a3220;
+  --danger-soft: #f7e6e1;
+  --success: #2f5d4f;
+
+  --focus-ring: #2f5d4f;
+
+  /* Paper does not glow. Shadows stay close, warm, and low-opacity. */
+  --shadow-sheet: 0 1px 2px rgb(28 26 22 / 4%), 0 8px 24px -12px rgb(28 26 22 / 12%);
+  --shadow-raised: 0 1px 2px rgb(28 26 22 / 5%), 0 18px 48px -20px rgb(28 26 22 / 22%);
+
+  --radius: 0.5rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    color-scheme: dark;
+
+    /* Warm charcoal, not black — the paper metaphor survives after dark. */
+    --canvas: #16150f;
+    --surface-subtle: #1c1b14;
+    --sheet: #22201a;
+    --sheet-raised: #292620;
+
+    --text-primary: #f0ece2;
+    --text-secondary: #b8b1a4;
+    --text-muted: #8c8578;
+
+    --border: #35322a;
+    --border-strong: #4b463c;
+
+    --accent: #7fb3a0;
+    --accent-hover: #96c4b2;
+    --accent-soft: #24352e;
+    --accent-contrast: #16150f;
+
+    --danger: #e08b76;
+    --danger-soft: #35211c;
+    --success: #7fb3a0;
+
+    --focus-ring: #7fb3a0;
+
+    --shadow-sheet: 0 1px 2px rgb(0 0 0 / 30%), 0 8px 24px -12px rgb(0 0 0 / 50%);
+    --shadow-raised: 0 1px 2px rgb(0 0 0 / 35%), 0 18px 48px -20px rgb(0 0 0 / 60%);
   }
 }
 
+/* Expose the tokens to Tailwind so utilities stay inside the same system. */
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-subtle: var(--surface-subtle);
+  --color-sheet: var(--sheet);
+  --color-raised: var(--sheet-raised);
+
+  --color-ink: var(--text-primary);
+  --color-ink-secondary: var(--text-secondary);
+  --color-ink-muted: var(--text-muted);
+
+  --color-rule: var(--border);
+  --color-rule-strong: var(--border-strong);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-contrast: var(--accent-contrast);
+
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+
+  --font-sans: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-newsreader), ui-serif, Georgia, serif;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--canvas);
+  color: var(--text-primary);
+  font-family: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* One consistent focus treatment, everywhere. Never removed. */
+:where(a, button, input, textarea, select, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Very fine paper grain. No image request, and it stops large flat areas from
+   reading as flat digital grey. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.5;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+}
+
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------------------------------------------------------------------------
+   Motion
+   ---------------------------------------------------------------------------
+   Restrained on purpose. This is a tool people write in for an hour, so the
+   motion budget goes to two things: orienting the user on arrival, and
+   confirming that an action landed. Nothing bounces, nothing loops, nothing
+   competes with the cursor.
+
+   One shared easing curve everywhere, so the whole app decelerates the same
+   way. That consistency is what reads as "designed" rather than "animated".
+   --------------------------------------------------------------------------- */
+
+:root {
+  --ease-out: cubic-bezier(0.2, 0.7, 0.3, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise {
+  animation: rise 460ms var(--ease-out) both;
+}
+
+/* Sheet arriving on the desk: settles down and in, never springs. */
+@keyframes settle {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.994);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.settle {
+  animation: settle 560ms var(--ease-out) both;
+}
+
+/* Dialogs get the only spring in the system — they should feel picked up. */
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes scrim-in {
+  from {
+    opacity: 0;
+    backdrop-filter: blur(0);
+  }
+  to {
+    opacity: 1;
+    backdrop-filter: blur(3px);
+  }
+}
+
+.dialog-in {
+  animation: dialog-in 320ms var(--ease-spring) both;
+}
+
+.scrim-in {
+  animation: scrim-in 240ms var(--ease-out) both;
+}
+
+/* Save-status swap: the old label leaves, the new one arrives. */
+@keyframes status-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.status-in {
+  animation: status-in 260ms var(--ease-out) both;
+}
+
+/* The "saving" pip breathes; the "saved" pip lands once and stops. */
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.82);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.pulse-soft {
+  animation: pulse-soft 1.15s ease-in-out infinite;
+}
+
+@keyframes pip-land {
+  from {
+    transform: scale(0.4);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+.pip-land {
+  animation: pip-land 340ms var(--ease-spring) both;
+}
+
+/* Text selection picks up the accent rather than the browser default blue. */
+::selection {
+  background: var(--accent-soft);
+  color: var(--text-primary);
+}
+
+/* React 19 View Transitions: route changes cross-fade instead of cutting.
+   Progressive enhancement — browsers without support simply cut, as before. */
+::view-transition-old(root) {
+  animation: 180ms var(--ease-out) both fade-out;
+}
+
+::view-transition-new(root) {
+  animation: 320ms var(--ease-out) both fade-in;
+}
+
+@keyframes fade-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

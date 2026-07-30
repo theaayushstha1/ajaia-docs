@@ -74,8 +74,22 @@ export default function DocumentActions() {
           type="button"
           onClick={() => fileInput.current?.click()}
           disabled={busy !== null}
-          className="rounded-md border border-neutral-300 bg-white px-3.5 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+          className="group inline-flex items-center gap-2 rounded-lg border border-rule bg-sheet px-3.5 py-2 text-sm font-medium text-ink-secondary shadow-[var(--shadow-sheet)] transition-all duration-200 hover:-translate-y-px hover:border-rule-strong hover:text-ink disabled:pointer-events-none disabled:opacity-50"
         >
+          <svg
+            aria-hidden
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="transition-transform duration-200 group-hover:-translate-y-0.5"
+          >
+            <path d="M12 16V4M7 9l5-5 5 5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2" />
+          </svg>
           {busy === 'import' ? 'Importing…' : 'Import .txt'}
         </button>
 
@@ -83,8 +97,22 @@ export default function DocumentActions() {
           type="button"
           onClick={createBlank}
           disabled={busy !== null}
-          className="rounded-md bg-neutral-900 px-3.5 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+          className="group inline-flex items-center gap-2 rounded-lg bg-accent px-3.5 py-2 text-sm font-medium text-accent-contrast shadow-[var(--shadow-sheet)] transition-all duration-200 hover:-translate-y-px hover:bg-accent-hover disabled:pointer-events-none disabled:opacity-50"
         >
+          <svg
+            aria-hidden
+            width="15"
+            height="15"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="transition-transform duration-300 group-hover:rotate-90"
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
           {busy === 'new' ? 'Creating…' : 'New document'}
         </button>
       </div>
@@ -103,7 +131,10 @@ export default function DocumentActions() {
       />
 
       {error && (
-        <p role="alert" className="text-sm text-red-700">
+        <p
+          role="alert"
+          className="status-in max-w-xs rounded-md bg-danger-soft px-3 py-2 text-right text-[0.8125rem] text-danger"
+        >
           {error}
         </p>
       )}

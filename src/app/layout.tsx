@@ -1,12 +1,29 @@
 import type { Metadata } from "next";
+import { Instrument_Sans, Newsreader } from "next/font/google";
 import "./globals.css";
 
 /**
- * System fonts, deliberately. `next/font/google` downloads font files during
- * `next build`, which turns every Cloud Build run into a network dependency on
- * a third party. For a document tool where the type is the product, the native
- * UI font is also the one that already looks right on the reader's machine.
+ * Two faces, split by role rather than decoration.
+ *
+ * Newsreader sets the document canvas: it is a reading serif, so what the user
+ * writes looks like something worth reading rather than like form input.
+ * Instrument Sans sets the chrome, which should recede.
+ *
+ * next/font downloads these at build time and self-hosts the result, so there
+ * is no third-party request from the browser and no layout shift.
  */
+const sans = Instrument_Sans({
+  variable: "--font-instrument-sans",
+  subsets: ["latin"],
+  display: "swap",
+});
+
+const serif = Newsreader({
+  variable: "--font-newsreader",
+  subsets: ["latin"],
+  display: "swap",
+  style: ["normal", "italic"],
+});
 
 export const metadata: Metadata = {
   title: "Ajaia Docs",
@@ -20,10 +37,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased">
-      <body className="flex min-h-full flex-col bg-neutral-100 text-neutral-900">
-        {children}
-      </body>
+    <html
+      lang="en"
+      className={`${sans.variable} ${serif.variable} h-full antialiased`}
+    >
+      <body className="flex min-h-full flex-col">{children}</body>
     </html>
   );
 }
