@@ -5,8 +5,8 @@
 | | |
 | --- | --- |
 | Live app | https://ajaia-docs-yc6d6jarwq-ue.a.run.app |
-| Repository | <!-- REPO_URL --> |
-| Walkthrough video | <!-- VIDEO_URL --> |
+| Repository | https://github.com/theaayushstha1/ajaia-docs |
+| Walkthrough video | <!-- VIDEO_URL --> _(link added on upload)_ |
 
 ## Demo logins
 
@@ -23,7 +23,7 @@ No passwords. Pick a user on the landing screen; open a second private window as
 | Deliverable | Where it is | Status |
 | --- | --- | --- |
 | Deployed application | https://ajaia-docs-yc6d6jarwq-ue.a.run.app (Cloud Run, us-east1) | Complete |
-| Source repository | <!-- REPO_URL --> | Complete |
+| Source repository | https://github.com/theaayushstha1/ajaia-docs | Complete |
 | README — quickstart, scope, limitations, local setup | [README.md](./README.md) | Complete |
 | Architecture note — data model and six decision records | [ARCHITECTURE.md](./ARCHITECTURE.md) | Complete |
 | AI workflow note — operating model, overrides, what AI got wrong | [AI-WORKFLOW.md](./AI-WORKFLOW.md) | Complete |
@@ -33,7 +33,7 @@ No passwords. Pick a user on the landing screen; open a second private window as
 | Content validation on writes | `src/lib/content-validation.ts` | Complete — node allowlist, depth, node-count, 512 KB ceiling |
 | Tests | `authz.test.ts`, `import-text.test.ts`, `content-validation.test.ts` | 55 assertions, all pure functions |
 | Live authorization probe | `scripts/probe-authz.mjs` — `npm run probe -- <url>` | 22/22 against the deployed URL. Drives real HTTP as each seeded user; this is what closes the gap unit tests cannot |
-| Walkthrough video (3–5 min) | <!-- VIDEO_URL --> | Complete |
+| Walkthrough video (3–5 min) | <!-- VIDEO_URL --> | Recorded and linked at submission |
 | Real-time collaboration | — | Deliberately cut, see ARCHITECTURE D5 |
 
 ## Time spent
@@ -55,5 +55,5 @@ The honest reason it was fast: the first 36 minutes were spent deciding what *no
 ## What I would want a reviewer to look at first
 
 1. `src/lib/authz.ts` and `src/lib/authz.test.ts` — the permission model and its exhaustive matrix.
-2. The **Try to break it** section of the README — six adversarial checks that run in about two minutes.
+2. The **Try to break it** section of the README — eight adversarial checks that run in about two minutes.
 3. ARCHITECTURE.md **D1** and **D4** — the two decisions that changed mid-build, and why the second one caused the first.

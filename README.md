@@ -67,7 +67,7 @@ The cuts are argued in [ARCHITECTURE.md](./ARCHITECTURE.md); the AI process behi
 Requires Node 22 and a reachable Postgres 16.
 
 ```bash
-git clone <repo-url> ajaia-docs && cd ajaia-docs
+git clone https://github.com/theaayushstha1/ajaia-docs.git ajaia-docs && cd ajaia-docs
 npm install
 
 cat > .env.local <<'EOF'
