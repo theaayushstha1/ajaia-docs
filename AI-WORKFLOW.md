@@ -54,6 +54,8 @@ I care about this one more than the code bugs. A false security claim in a READM
 
 `src/lib/authz.ts` and `src/lib/import-text.ts` are pure functions with no I/O — no database, no `next/headers`, no env — and that is a testing decision, not an aesthetic one. It means the permission matrix can be asserted exhaustively in milliseconds with no fixtures, and the same is true of the importer's guarantee that `<script>alert(1)</script>` in a `.txt` survives as literal text.
 
+The final Vitest suite contains 104 tests across authorization, content validation, `.txt` import, and Markdown export. Concurrency and revocation are verified separately by the 25 production HTTP checks below; I do not treat a pure unit test as proof of route or database behavior.
+
 I wrote the authorization matrix by hand, as the spec, before the tests existed. That ordering matters: a test suite generated from an implementation asserts that the code does what it does.
 
 The caveat I want stated plainly, because it is the one a reviewer should press on: **a passing unit test on a permission function does not prove the route handlers call it.** `can()` returning `false` for `collaborator × share` is worth nothing if `POST /shares` never asks.

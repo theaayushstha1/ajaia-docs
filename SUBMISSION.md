@@ -19,7 +19,9 @@
 - `LIVE-PRODUCT-URL.txt` — deployed Cloud Run URL and review entry point
 - `WALKTHROUGH-VIDEO.txt` — public walkthrough URL
 - `Aayush-Shrestha-Ajaia-Docs-Walkthrough.mp4` — 4K, 3:09 walkthrough video
-- `screenshots/` — editor, dashboard, conflict, collaborator, unauthorized, and verification views
+- `docs/images/` — editor and dashboard images referenced by the README
+- `screenshots/` — conflict, collaborator, unauthorized, and verification views
+- `LICENSE` — MIT license
 - `CHECKSUMS.txt` — SHA-256 checksums for the source archive and walkthrough video
 
 ## Demo logins
@@ -34,22 +36,22 @@ No passwords. Pick a user on the landing screen; open a second private window as
 
 ## Deliverables
 
-| Deliverable                                                             | Where it is                                                                        | Status                                                                                        |
-| ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Deployed application                                                    | https://ajaia-docs-yc6d6jarwq-ue.a.run.app (Cloud Run, us-east1)                   | Complete                                                                                      |
-| Source repository                                                       | https://github.com/theaayushstha1/ajaia-docs                                       | Complete                                                                                      |
-| README — quickstart, scope, limitations, local setup                    | [README.md](./README.md)                                                           | Complete                                                                                      |
-| Architecture note — data model and six decision records                 | [ARCHITECTURE.md](./ARCHITECTURE.md)                                               | Complete                                                                                      |
-| AI workflow note — operating model, overrides, what AI got wrong        | [AI-WORKFLOW.md](./AI-WORKFLOW.md)                                                 | Complete                                                                                      |
-| Rich-text editor with 750 ms debounced autosave                         | `src/components/editor/DocumentEditor.tsx`, `src/components/DocumentWorkspace.tsx` | Complete                                                                                      |
-| File upload — `.txt`, 256 KB cap                                        | `src/lib/import-text.ts`, `POST /api/documents`                                    | Complete, `.txt` only by design                                                               |
-| Sharing and permissions                                                 | `src/lib/authz.ts`, `src/db/dal.ts`, `/api/documents/[id]/shares`                  | Complete, two roles by design                                                                 |
-| Content validation on writes                                            | `src/lib/content-validation.ts`                                                    | Complete — node allowlist, depth, node-count, 512 KB ceiling                                  |
-| Presence, safe concurrent editing, version checkpoints, Markdown export | `PresenceBar.tsx`, `VersionHistory.tsx`, export/version routes                     | Complete; no CRDT text merging by design                                                      |
-| Tests                                                                   | `src/lib/*.test.ts`                                                                | 104/104 across authorization, import, validation, and Markdown export                         |
-| Live authorization probe                                                | `scripts/probe-authz.mjs` — `npm run probe -- <url>`                               | 25/25 against the deployed URL, including stale-write and revocation checks                   |
-| Walkthrough video (3–5 min)                                             | `WALKTHROUGH-VIDEO.txt` and the included MP4                                       | Complete                                                                                      |
-| Real-time text merging                                                  | —                                                                                  | Deliberately cut; presence and `409` conflict protection shipped instead, see ARCHITECTURE D5 |
+| Deliverable                                                                    | Where it is                                                                        | Status                                                                                        |
+| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Deployed application                                                           | https://ajaia-docs-yc6d6jarwq-ue.a.run.app (Cloud Run, us-east1)                   | Complete                                                                                      |
+| Source repository                                                              | https://github.com/theaayushstha1/ajaia-docs                                       | Complete                                                                                      |
+| README — quickstart, scope, limitations, local setup                           | [README.md](./README.md)                                                           | Complete                                                                                      |
+| Architecture note — data model and six decision records                        | [ARCHITECTURE.md](./ARCHITECTURE.md)                                               | Complete                                                                                      |
+| AI workflow note — operating model, overrides, what AI got wrong               | [AI-WORKFLOW.md](./AI-WORKFLOW.md)                                                 | Complete                                                                                      |
+| Rich-text editor with 750 ms debounced autosave                                | `src/components/editor/DocumentEditor.tsx`, `src/components/DocumentWorkspace.tsx` | Complete                                                                                      |
+| File upload — `.txt`, 256 KB cap                                               | `src/lib/import-text.ts`, `POST /api/documents`                                    | Complete, `.txt` only by design                                                               |
+| Sharing and permissions                                                        | `src/lib/authz.ts`, `src/db/dal.ts`, `/api/documents/[id]/shares`                  | Complete, two roles by design                                                                 |
+| Content validation on writes                                                   | `src/lib/content-validation.ts`                                                    | Complete — node allowlist, depth, node-count, 512 KB ceiling                                  |
+| Presence, safe concurrent editing, version checkpoint history, Markdown export | `PresenceBar.tsx`, `VersionHistory.tsx`, export/version routes                     | Complete; restore is reversible and owner-only; no CRDT text merging by design                |
+| Tests                                                                          | `src/lib/*.test.ts`                                                                | 104/104 across authorization, import, validation, and Markdown export                         |
+| Live authorization probe                                                       | `scripts/probe-authz.mjs` — `npm run probe -- <url>`                               | 25/25 against the deployed URL, including stale-write and revocation checks                   |
+| Walkthrough video (3–5 min)                                                    | `WALKTHROUGH-VIDEO.txt` and the included MP4                                       | Complete                                                                                      |
+| Real-time text merging                                                         | —                                                                                  | Deliberately cut; presence and `409` conflict protection shipped instead, see ARCHITECTURE D5 |
 
 ## Time spent
 

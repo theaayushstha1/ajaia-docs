@@ -14,11 +14,11 @@ Next.js 16 App Router  (single service on Cloud Run)
   src/lib/authz.ts  (pure permission rules, no I/O)
 ```
 
-One deployable. The dashboard and editor pages read through the data-access
-layer directly as Server Components; only mutations go through route handlers.
-That halves the number of endpoints without giving anything up, because a
-read-only GET endpoint would have been a second copy of a check the page
-already performs.
+One deployable. Initial dashboard and editor-page reads go through the
+data-access layer as Server Components. Mutations and browser-triggered reads
+for presence, version history, and Markdown export use Route Handlers. This
+keeps the main page load direct while giving interactive client features a
+small, authorization-checked HTTP boundary.
 
 ## Data model
 
@@ -132,6 +132,19 @@ next step, not something to fake inside this timebox.
 **Rejected alternative.** SQLite on the container filesystem. Cloud Run's
 filesystem is ephemeral and per-instance, so it would have failed the
 "documents survive a refresh" requirement the moment a second instance started.
+
+## Bounded enhancements
+
+- **Version checkpoints** keep at most 20 snapshots per document. Restore is
+  owner-only because a snapshot includes the title as well as the body; the
+  current state is saved first, and snapshot-plus-restore runs in one
+  transaction so the operation remains reversible.
+- **Presence** is a 15-second Postgres heartbeat with a 45-second staleness
+  window. It answers who else is viewing the document without claiming
+  real-time text merging or requiring an always-on socket service.
+- **Markdown export** is a read-authorized, pure conversion from validated
+  TipTap JSON. It creates a normal download without storing a second content
+  representation.
 
 ## Authorization
 
