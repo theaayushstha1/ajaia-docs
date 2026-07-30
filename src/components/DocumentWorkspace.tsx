@@ -58,16 +58,22 @@ export default function DocumentWorkspace({
   );
 
   async function handleDelete() {
+    if (deleting) return;
     if (!confirm('Delete this document? This cannot be undone.')) return;
 
     setDeleting(true);
-    const response = await fetch(`/api/documents/${docId}`, { method: 'DELETE' });
-    if (response.ok) {
-      router.push('/');
-      router.refresh();
-    } else {
-      setDeleting(false);
+    try {
+      const response = await fetch(`/api/documents/${docId}`, { method: 'DELETE' });
+      if (response.ok) {
+        router.push('/');
+        router.refresh();
+        return;
+      }
       alert('Could not delete this document.');
+    } catch {
+      alert('Could not delete this document. Check your connection and try again.');
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -118,6 +124,7 @@ export default function DocumentWorkspace({
         initialTitle={initialTitle}
         initialContent={initialContent}
         editable
+        canRename={isOwner}
         onSave={handleSave}
       />
 

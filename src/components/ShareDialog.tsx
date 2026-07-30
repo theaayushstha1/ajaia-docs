@@ -21,58 +21,99 @@ export default function ShareDialog({
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [revokingUserId, setRevokingUserId] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    const previouslyFocused = document.activeElement as HTMLElement | null;
     inputRef.current?.focus();
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+      const focusable = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (focusable.length === 0) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
     document.addEventListener('keydown', onKeyDown);
-    return () => document.removeEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      previouslyFocused?.focus();
+    };
   }, [onClose]);
 
   async function handleShare(event: React.FormEvent) {
     event.preventDefault();
+    if (busy) return;
     setError(null);
     setBusy(true);
 
-    const response = await fetch(`/api/documents/${docId}/shares`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email }),
-    });
-    const body = await response.json().catch(() => ({}));
-    setBusy(false);
+    try {
+      const response = await fetch(`/api/documents/${docId}/shares`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const body = await response.json().catch(() => ({}));
 
-    if (!response.ok) {
-      setError(body.error ?? 'Could not share this document.');
-      return;
+      if (!response.ok) {
+        setError(body.error ?? 'Could not share this document.');
+        return;
+      }
+
+      // The API upserts, so re-sharing an existing collaborator must not
+      // duplicate the row in the list.
+      setCollaborators((current) =>
+        current.some((c) => c.userId === body.userId) ? current : [...current, body],
+      );
+      setEmail('');
+    } catch {
+      setError('Could not share this document. Check your connection and try again.');
+    } finally {
+      setBusy(false);
     }
-
-    // The API upserts, so re-sharing an existing collaborator must not
-    // duplicate the row in the list.
-    setCollaborators((current) =>
-      current.some((c) => c.userId === body.userId) ? current : [...current, body],
-    );
-    setEmail('');
   }
 
   async function handleRevoke(userId: string) {
+    if (revokingUserId) return;
     setError(null);
-    const response = await fetch(`/api/documents/${docId}/shares`, {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userId }),
-    });
+    setRevokingUserId(userId);
+    try {
+      const response = await fetch(`/api/documents/${docId}/shares`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId }),
+      });
 
-    if (response.ok) {
-      setCollaborators((current) => current.filter((c) => c.userId !== userId));
-    } else {
+      if (response.ok) {
+        setCollaborators((current) => current.filter((c) => c.userId !== userId));
+        return;
+      }
       setError('Could not remove access.');
+    } catch {
+      setError('Could not remove access. Check your connection and try again.');
+    } finally {
+      setRevokingUserId(null);
     }
   }
 
@@ -88,12 +129,13 @@ export default function ShareDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby="share-dialog-title"
+        aria-describedby="share-dialog-description"
         className="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-xl"
       >
         <h2 id="share-dialog-title" className="text-lg font-semibold text-neutral-900">
           Share this document
         </h2>
-        <p className="mt-1 text-sm text-neutral-600">
+        <p id="share-dialog-description" className="mt-1 text-sm text-neutral-600">
           Anyone you add can read and edit it. Only you can share it or delete it.
         </p>
 
@@ -143,9 +185,10 @@ export default function ShareDialog({
                   <button
                     type="button"
                     onClick={() => handleRevoke(collaborator.userId)}
+                    disabled={revokingUserId !== null}
                     className="rounded px-2 py-1 text-xs text-neutral-500 transition hover:bg-red-50 hover:text-red-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
                   >
-                    Remove
+                    {revokingUserId === collaborator.userId ? 'Removing…' : 'Remove'}
                   </button>
                 </li>
               ))}

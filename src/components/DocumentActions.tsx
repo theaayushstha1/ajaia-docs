@@ -12,25 +12,32 @@ export default function DocumentActions() {
   const [error, setError] = useState<string | null>(null);
 
   async function createBlank() {
+    if (busy) return;
     setBusy('new');
     setError(null);
 
-    const response = await fetch('/api/documents', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({}),
-    });
-    const body = await response.json().catch(() => ({}));
-    setBusy(null);
+    try {
+      const response = await fetch('/api/documents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const body = await response.json().catch(() => ({}));
 
-    if (!response.ok) {
-      setError(body.error ?? 'Could not create a document.');
-      return;
+      if (!response.ok) {
+        setError(body.error ?? 'Could not create a document.');
+        return;
+      }
+      router.push(`/docs/${body.id}`);
+    } catch {
+      setError('Could not create a document. Check your connection and try again.');
+    } finally {
+      setBusy(null);
     }
-    router.push(`/docs/${body.id}`);
   }
 
   async function importFile(file: File) {
+    if (busy) return;
     setError(null);
 
     // Check client-side as well as server-side: without this the user waits
@@ -44,15 +51,20 @@ export default function DocumentActions() {
     const form = new FormData();
     form.append('file', file);
 
-    const response = await fetch('/api/documents', { method: 'POST', body: form });
-    const body = await response.json().catch(() => ({}));
-    setBusy(null);
+    try {
+      const response = await fetch('/api/documents', { method: 'POST', body: form });
+      const body = await response.json().catch(() => ({}));
 
-    if (!response.ok) {
-      setError(body.error ?? 'Could not import that file.');
-      return;
+      if (!response.ok) {
+        setError(body.error ?? 'Could not import that file.');
+        return;
+      }
+      router.push(`/docs/${body.id}`);
+    } catch {
+      setError('Could not import that file. Check your connection and try again.');
+    } finally {
+      setBusy(null);
     }
-    router.push(`/docs/${body.id}`);
   }
 
   return (
