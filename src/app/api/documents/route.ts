@@ -38,11 +38,10 @@ export async function POST(request: Request) {
 
     // Only .txt is supported. Word documents are a deliberate scope cut —
     // see the README; parsing them safely is its own project.
-    const isPlainText =
-      file.name.toLowerCase().endsWith('.txt') ||
-      file.type === 'text/plain' ||
-      file.type === '';
-    if (!isPlainText) {
+    // MIME values are supplied by the client and browsers commonly report
+    // Markdown and other text files as text/plain. The product contract is
+    // specifically .txt, so the filename suffix is the authoritative gate.
+    if (!file.name.toLowerCase().endsWith('.txt')) {
       return NextResponse.json(
         { error: 'Only plain-text .txt files can be imported.' },
         { status: 415 },

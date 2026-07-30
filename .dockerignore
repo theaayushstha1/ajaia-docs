@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.gitignore
+.env*
+npm-debug.log*
+Dockerfile
+.dockerignore
+cloud-sql-proxy
+drizzle
+coverage
+README.md
+INFRA-NOTES.md
+.DS_Store

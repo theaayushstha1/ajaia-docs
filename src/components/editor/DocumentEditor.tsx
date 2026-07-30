@@ -1,0 +1,532 @@
+'use client';
+
+import type { JSONContent } from '@tiptap/core';
+import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type ReactNode,
+} from 'react';
+
+import './editor.css';
+
+const AUTOSAVE_DELAY_MS = 750;
+const MAX_TITLE_LENGTH = 200;
+
+const EMPTY_DOCUMENT: JSONContent = {
+  type: 'doc',
+  content: [{ type: 'paragraph' }],
+};
+
+type SaveState = 'saved' | 'unsaved' | 'saving' | 'error';
+
+type DraftSnapshot = {
+  title: string;
+  content: JSONContent;
+  contentKey: string;
+};
+
+export type DocumentEditorProps = {
+  docId: string;
+  initialTitle: string;
+  initialContent: unknown;
+  editable: boolean;
+  canRename: boolean;
+  onSave: (patch: { title?: string; content?: unknown }) => Promise<void>;
+};
+
+type ToolbarButtonProps = {
+  label: string;
+  disabled: boolean;
+  onPress: () => void;
+  children: ReactNode;
+  active?: boolean;
+};
+
+const EMPTY_TOOLBAR_STATE = {
+  bold: false,
+  italic: false,
+  underline: false,
+  heading1: false,
+  heading2: false,
+  heading3: false,
+  bulletList: false,
+  orderedList: false,
+  canBold: false,
+  canItalic: false,
+  canUnderline: false,
+  canHeading1: false,
+  canHeading2: false,
+  canHeading3: false,
+  canBulletList: false,
+  canOrderedList: false,
+  canUndo: false,
+  canRedo: false,
+};
+
+function normalizeInitialContent(value: unknown): JSONContent {
+  if (
+    typeof value === 'object' &&
+    value !== null &&
+    'type' in value &&
+    value.type === 'doc' &&
+    'content' in value &&
+    Array.isArray(value.content)
+  ) {
+    return value as JSONContent;
+  }
+
+  return EMPTY_DOCUMENT;
+}
+
+function canonicalTitle(value: string): string {
+  const normalized = value.trim().slice(0, MAX_TITLE_LENGTH);
+  return normalized || 'Untitled document';
+}
+
+function isDirty(
+  draft: DraftSnapshot,
+  saved: DraftSnapshot,
+  editable: boolean,
+  canRename: boolean,
+): boolean {
+  return (
+    (editable && draft.contentKey !== saved.contentKey) ||
+    (canRename && canonicalTitle(draft.title) !== canonicalTitle(saved.title))
+  );
+}
+
+function ToolbarButton({
+  label,
+  disabled,
+  onPress,
+  children,
+  active,
+}: ToolbarButtonProps) {
+  return (
+    <button
+      type="button"
+      className="document-editor__tool"
+      aria-label={label}
+      aria-pressed={active === undefined ? undefined : active}
+      title={label}
+      disabled={disabled}
+      onClick={onPress}
+    >
+      <span aria-hidden="true">{children}</span>
+    </button>
+  );
+}
+
+export default function DocumentEditor({
+  docId,
+  initialTitle,
+  initialContent,
+  editable,
+  canRename,
+  onSave,
+}: DocumentEditorProps) {
+  const [startingContent] = useState<JSONContent>(() =>
+    normalizeInitialContent(initialContent),
+  );
+  const [title, setTitle] = useState(initialTitle);
+  const [saveState, setSaveState] = useState<SaveState>('saved');
+
+  const initialSnapshot: DraftSnapshot = {
+    title: initialTitle,
+    content: startingContent,
+    contentKey: JSON.stringify(startingContent),
+  };
+
+  const draftRef = useRef<DraftSnapshot>(initialSnapshot);
+  const savedRef = useRef<DraftSnapshot>(initialSnapshot);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const inFlightRef = useRef(false);
+  const mountedRef = useRef(false);
+  const runSaveRef = useRef<() => void>(() => undefined);
+
+  const clearSaveTimer = useCallback(() => {
+    if (timerRef.current !== null) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const scheduleSave = useCallback(() => {
+    clearSaveTimer();
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      runSaveRef.current();
+    }, AUTOSAVE_DELAY_MS);
+  }, [clearSaveTimer]);
+
+  const markDirty = useCallback(
+    (nextDraft: DraftSnapshot) => {
+      draftRef.current = nextDraft;
+      setSaveState('unsaved');
+      scheduleSave();
+    },
+    [scheduleSave],
+  );
+
+  const runSave = useCallback(async () => {
+    if (inFlightRef.current) return;
+
+    clearSaveTimer();
+
+    const draftAtStart = draftRef.current;
+    const savedAtStart = savedRef.current;
+    const patch: { title?: string; content?: unknown } = {};
+
+    if (
+      canRename &&
+      canonicalTitle(draftAtStart.title) !== canonicalTitle(savedAtStart.title)
+    ) {
+      patch.title = canonicalTitle(draftAtStart.title);
+    }
+
+    if (editable && draftAtStart.contentKey !== savedAtStart.contentKey) {
+      patch.content = draftAtStart.content;
+    }
+
+    if (Object.keys(patch).length === 0) {
+      if (mountedRef.current) setSaveState('saved');
+      return;
+    }
+
+    inFlightRef.current = true;
+    if (mountedRef.current) setSaveState('saving');
+
+    try {
+      await onSave(patch);
+
+      savedRef.current = {
+        title:
+          patch.title === undefined ? savedAtStart.title : canonicalTitle(draftAtStart.title),
+        content: patch.content === undefined ? savedAtStart.content : draftAtStart.content,
+        contentKey:
+          patch.content === undefined ? savedAtStart.contentKey : draftAtStart.contentKey,
+      };
+
+      if (!mountedRef.current) return;
+
+      if (isDirty(draftRef.current, savedRef.current, editable, canRename)) {
+        setSaveState('unsaved');
+        scheduleSave();
+      } else {
+        setSaveState('saved');
+      }
+    } catch {
+      // Keep draftRef untouched: Retry must send the exact latest local draft.
+      clearSaveTimer();
+      if (mountedRef.current) setSaveState('error');
+    } finally {
+      inFlightRef.current = false;
+    }
+  }, [canRename, clearSaveTimer, editable, onSave, scheduleSave]);
+
+  useEffect(() => {
+    runSaveRef.current = () => {
+      void runSave();
+    };
+  }, [runSave]);
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => {
+      mountedRef.current = false;
+      clearSaveTimer();
+    };
+  }, [clearSaveTimer]);
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({
+        heading: { levels: [1, 2, 3] },
+        blockquote: false,
+        code: false,
+        codeBlock: false,
+        horizontalRule: false,
+        link: false,
+        strike: false,
+      }),
+    ],
+    content: startingContent,
+    editable,
+    immediatelyRender: false,
+    shouldRerenderOnTransaction: false,
+    editorProps: {
+      attributes: {
+        role: 'textbox',
+        'aria-label': 'Document content',
+        'aria-multiline': 'true',
+        'aria-readonly': String(!editable),
+        'aria-describedby': `save-status-${docId}`,
+        spellcheck: 'true',
+        autocapitalize: 'sentences',
+      },
+    },
+    onUpdate: ({ editor: updatedEditor }) => {
+      if (!editable) return;
+
+      const content = updatedEditor.getJSON();
+      markDirty({
+        ...draftRef.current,
+        content,
+        contentKey: JSON.stringify(content),
+      });
+    },
+  });
+
+  useEffect(() => {
+    if (editor && editor.isEditable !== editable) editor.setEditable(editable);
+  }, [editable, editor]);
+
+  const selectedState = useEditorState({
+    editor,
+    selector: ({ editor: currentEditor }) => {
+      if (!currentEditor) return EMPTY_TOOLBAR_STATE;
+
+      const commandsEnabled = editable && currentEditor.isEditable;
+
+      return {
+        bold: currentEditor.isActive('bold'),
+        italic: currentEditor.isActive('italic'),
+        underline: currentEditor.isActive('underline'),
+        heading1: currentEditor.isActive('heading', { level: 1 }),
+        heading2: currentEditor.isActive('heading', { level: 2 }),
+        heading3: currentEditor.isActive('heading', { level: 3 }),
+        bulletList: currentEditor.isActive('bulletList'),
+        orderedList: currentEditor.isActive('orderedList'),
+        canBold:
+          commandsEnabled && currentEditor.can().chain().focus().toggleBold().run(),
+        canItalic:
+          commandsEnabled && currentEditor.can().chain().focus().toggleItalic().run(),
+        canUnderline:
+          commandsEnabled && currentEditor.can().chain().focus().toggleUnderline().run(),
+        canHeading1:
+          commandsEnabled &&
+          currentEditor.can().chain().focus().toggleHeading({ level: 1 }).run(),
+        canHeading2:
+          commandsEnabled &&
+          currentEditor.can().chain().focus().toggleHeading({ level: 2 }).run(),
+        canHeading3:
+          commandsEnabled &&
+          currentEditor.can().chain().focus().toggleHeading({ level: 3 }).run(),
+        canBulletList:
+          commandsEnabled && currentEditor.can().chain().focus().toggleBulletList().run(),
+        canOrderedList:
+          commandsEnabled && currentEditor.can().chain().focus().toggleOrderedList().run(),
+        canUndo: commandsEnabled && currentEditor.can().chain().focus().undo().run(),
+        canRedo: commandsEnabled && currentEditor.can().chain().focus().redo().run(),
+      };
+    },
+  });
+
+  const toolbarState = selectedState ?? EMPTY_TOOLBAR_STATE;
+
+  function handleTitleChange(event: ChangeEvent<HTMLInputElement>) {
+    if (!canRename) return;
+
+    const nextTitle = event.target.value;
+    setTitle(nextTitle);
+    markDirty({ ...draftRef.current, title: nextTitle });
+  }
+
+  function handleTitleBlur() {
+    if (!canRename) return;
+
+    const normalizedTitle = canonicalTitle(title);
+    if (normalizedTitle !== title) {
+      setTitle(normalizedTitle);
+      markDirty({ ...draftRef.current, title: normalizedTitle });
+    }
+  }
+
+  return (
+    <main className="document-editor" data-document-id={docId}>
+      <div className="document-editor__chrome">
+        <div className="document-editor__title-row">
+          <label className="document-editor__sr-only" htmlFor={`document-title-${docId}`}>
+            Document title
+          </label>
+          <input
+            id={`document-title-${docId}`}
+            className="document-editor__title"
+            value={title}
+            onChange={handleTitleChange}
+            onBlur={handleTitleBlur}
+            readOnly={!canRename}
+            aria-readonly={!canRename}
+            maxLength={MAX_TITLE_LENGTH}
+          />
+
+          <div className={`document-editor__save-state is-${saveState}`}>
+            <span
+              id={`save-status-${docId}`}
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              <span className="document-editor__status-dot" aria-hidden="true" />
+              {saveState === 'saved' && 'Saved'}
+              {saveState === 'unsaved' && 'Unsaved'}
+              {saveState === 'saving' && 'Saving…'}
+              {saveState === 'error' && 'Error'}
+            </span>
+            {saveState === 'error' && (
+              <button
+                type="button"
+                className="document-editor__retry"
+                onClick={() => void runSave()}
+              >
+                Retry
+              </button>
+            )}
+          </div>
+        </div>
+
+        {editable ? (
+          <div className="document-editor__toolbar" role="toolbar" aria-label="Text formatting">
+            <div className="document-editor__tool-group" role="group" aria-label="Text style">
+              <ToolbarButton
+                label="Bold"
+                active={toolbarState.bold}
+                disabled={!toolbarState.canBold}
+                onPress={() => {
+                  editor?.chain().focus().toggleBold().run();
+                }}
+              >
+                <strong>B</strong>
+              </ToolbarButton>
+              <ToolbarButton
+                label="Italic"
+                active={toolbarState.italic}
+                disabled={!toolbarState.canItalic}
+                onPress={() => {
+                  editor?.chain().focus().toggleItalic().run();
+                }}
+              >
+                <em>I</em>
+              </ToolbarButton>
+              <ToolbarButton
+                label="Underline"
+                active={toolbarState.underline}
+                disabled={!toolbarState.canUnderline}
+                onPress={() => {
+                  editor?.chain().focus().toggleUnderline().run();
+                }}
+              >
+                <u>U</u>
+              </ToolbarButton>
+            </div>
+
+            <span className="document-editor__separator" aria-hidden="true" />
+
+            <div className="document-editor__tool-group" role="group" aria-label="Headings">
+              <ToolbarButton
+                label="Heading 1"
+                active={toolbarState.heading1}
+                disabled={!toolbarState.canHeading1}
+                onPress={() => {
+                  editor?.chain().focus().toggleHeading({ level: 1 }).run();
+                }}
+              >
+                H1
+              </ToolbarButton>
+              <ToolbarButton
+                label="Heading 2"
+                active={toolbarState.heading2}
+                disabled={!toolbarState.canHeading2}
+                onPress={() => {
+                  editor?.chain().focus().toggleHeading({ level: 2 }).run();
+                }}
+              >
+                H2
+              </ToolbarButton>
+              <ToolbarButton
+                label="Heading 3"
+                active={toolbarState.heading3}
+                disabled={!toolbarState.canHeading3}
+                onPress={() => {
+                  editor?.chain().focus().toggleHeading({ level: 3 }).run();
+                }}
+              >
+                H3
+              </ToolbarButton>
+            </div>
+
+            <span className="document-editor__separator" aria-hidden="true" />
+
+            <div className="document-editor__tool-group" role="group" aria-label="Lists">
+              <ToolbarButton
+                label="Bulleted list"
+                active={toolbarState.bulletList}
+                disabled={!toolbarState.canBulletList}
+                onPress={() => {
+                  editor?.chain().focus().toggleBulletList().run();
+                }}
+              >
+                •≡
+              </ToolbarButton>
+              <ToolbarButton
+                label="Numbered list"
+                active={toolbarState.orderedList}
+                disabled={!toolbarState.canOrderedList}
+                onPress={() => {
+                  editor?.chain().focus().toggleOrderedList().run();
+                }}
+              >
+                1.
+              </ToolbarButton>
+            </div>
+
+            <span className="document-editor__separator" aria-hidden="true" />
+
+            <div className="document-editor__tool-group" role="group" aria-label="History">
+              <ToolbarButton
+                label="Undo"
+                disabled={!toolbarState.canUndo}
+                onPress={() => {
+                  editor?.chain().focus().undo().run();
+                }}
+              >
+                ↶
+              </ToolbarButton>
+              <ToolbarButton
+                label="Redo"
+                disabled={!toolbarState.canRedo}
+                onPress={() => {
+                  editor?.chain().focus().redo().run();
+                }}
+              >
+                ↷
+              </ToolbarButton>
+            </div>
+          </div>
+        ) : (
+          <div className="document-editor__readonly-note" role="note">
+            Read-only
+          </div>
+        )}
+      </div>
+
+      <div className="document-editor__canvas">
+        <div className="document-editor__sheet">
+          {editor ? (
+            <EditorContent editor={editor} />
+          ) : (
+            <div className="document-editor__loading" role="status">
+              Loading editor…
+            </div>
+          )}
+        </div>
+      </div>
+    </main>
+  );
+}
