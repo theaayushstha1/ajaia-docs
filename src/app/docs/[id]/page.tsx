@@ -47,7 +47,6 @@ export default async function DocumentPage(props: PageProps<'/docs/[id]'>) {
       docId={doc.id}
       initialTitle={doc.title}
       initialContent={doc.content}
-      initialUpdatedAt={doc.updatedAt.toISOString()}
       role={role}
       ownerName={ownerName}
       currentUserName={user.name}

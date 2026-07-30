@@ -82,11 +82,7 @@ await expect('writing without a session is refused', 401, () =>
 console.log('\nOwner');
 await expect('opens the document', 200, () => request(`/docs/${DOC}`, { as: ADA }));
 await expect('renames it', 200, () =>
-  request(`/api/documents/${DOC}`, {
-    as: ADA,
-    method: 'PATCH',
-    body: { title: 'Q3 Product Planning' },
-  }),
+  request(`/api/documents/${DOC}`, { as: ADA, method: 'PATCH', body: { title: 'Q3 Product Planning' } }),
 );
 await expect('a malformed id is a 404, not a 500 from a failed uuid cast', 404, () =>
   request('/docs/not-a-uuid', { as: ADA }),
@@ -95,32 +91,16 @@ await expect('a well-formed id that does not exist is a 404', 404, () =>
   request('/docs/00000000-0000-4000-8000-000000000000', { as: ADA }),
 );
 await expect('sharing with an unknown address fails cleanly', 404, () =>
-  request(`/api/documents/${DOC}/shares`, {
-    as: ADA,
-    method: 'POST',
-    body: { email: 'nobody@nowhere.test' },
-  }),
+  request(`/api/documents/${DOC}/shares`, { as: ADA, method: 'POST', body: { email: 'nobody@nowhere.test' } }),
 );
 await expect('cannot share with themselves', 400, () =>
-  request(`/api/documents/${DOC}/shares`, {
-    as: ADA,
-    method: 'POST',
-    body: { email: 'ada@ajaia.demo' },
-  }),
+  request(`/api/documents/${DOC}/shares`, { as: ADA, method: 'POST', body: { email: 'ada@ajaia.demo' } }),
 );
 await expect('shares with a collaborator', 201, () =>
-  request(`/api/documents/${DOC}/shares`, {
-    as: ADA,
-    method: 'POST',
-    body: { email: 'grace@ajaia.demo' },
-  }),
+  request(`/api/documents/${DOC}/shares`, { as: ADA, method: 'POST', body: { email: 'grace@ajaia.demo' } }),
 );
 await expect('re-sharing is idempotent, and the address is normalized', 201, () =>
-  request(`/api/documents/${DOC}/shares`, {
-    as: ADA,
-    method: 'POST',
-    body: { email: '  GRACE@Ajaia.Demo  ' },
-  }),
+  request(`/api/documents/${DOC}/shares`, { as: ADA, method: 'POST', body: { email: '  GRACE@Ajaia.Demo  ' } }),
 );
 await expect('content outside the node allowlist is rejected', 400, () =>
   request(`/api/documents/${DOC}`, {
@@ -133,100 +113,33 @@ await expect('content outside the node allowlist is rejected', 400, () =>
 console.log('\nCollaborator');
 await expect('sees the document', 200, () => request(`/docs/${DOC}`, { as: GRACE }));
 await expect('edits the body', 200, () =>
-  request(`/api/documents/${DOC}`, {
-    as: GRACE,
-    method: 'PATCH',
-    body: { content: paragraph('edited by a collaborator') },
-  }),
+  request(`/api/documents/${DOC}`, { as: GRACE, method: 'PATCH', body: { content: paragraph('edited by a collaborator') } }),
 );
 await expect('cannot rename it', 403, () =>
   request(`/api/documents/${DOC}`, { as: GRACE, method: 'PATCH', body: { title: 'mine now' } }),
 );
-await expect('cannot delete it', 403, () =>
-  request(`/api/documents/${DOC}`, { as: GRACE, method: 'DELETE' }),
-);
+await expect('cannot delete it', 403, () => request(`/api/documents/${DOC}`, { as: GRACE, method: 'DELETE' }));
 await expect('cannot pass access along', 403, () =>
-  request(`/api/documents/${DOC}/shares`, {
-    as: GRACE,
-    method: 'POST',
-    body: { email: 'alan@ajaia.demo' },
-  }),
+  request(`/api/documents/${DOC}/shares`, { as: GRACE, method: 'POST', body: { email: 'alan@ajaia.demo' } }),
 );
 await expect('cannot seize ownership via mass assignment', 400, () =>
   request(`/api/documents/${DOC}`, { as: GRACE, method: 'PATCH', body: { ownerId: GRACE } }),
 );
 
 console.log('\nStranger');
-await expect('gets a 404, not a 403 — no existence oracle', 404, () =>
-  request(`/docs/${DOC}`, { as: ALAN }),
-);
+await expect('gets a 404, not a 403 — no existence oracle', 404, () => request(`/docs/${DOC}`, { as: ALAN }));
 await expect('writing is a 404 too', 404, () =>
-  request(`/api/documents/${DOC}`, {
-    as: ALAN,
-    method: 'PATCH',
-    body: { content: paragraph('nope') },
-  }),
+  request(`/api/documents/${DOC}`, { as: ALAN, method: 'PATCH', body: { content: paragraph('nope') } }),
 );
 await expect('cannot share what they cannot see', 404, () =>
-  request(`/api/documents/${DOC}/shares`, {
-    as: ALAN,
-    method: 'POST',
-    body: { email: 'alan@ajaia.demo' },
-  }),
+  request(`/api/documents/${DOC}/shares`, { as: ALAN, method: 'POST', body: { email: 'alan@ajaia.demo' } }),
 );
-
-console.log('\nConcurrency');
-{
-  // Establish a known token: a save with no precondition always wins and
-  // hands back the resulting updatedAt.
-  const first = await request(`/api/documents/${DOC}`, {
-    as: ADA,
-    method: 'PATCH',
-    body: { content: paragraph('first writer') },
-  });
-  const token = (await first.json().catch(() => ({}))).updatedAt;
-
-  if (!token) {
-    failed++;
-    console.log('  FAIL  could not obtain an updatedAt token to test against');
-  } else {
-    await expect('a save carrying the current token succeeds', 200, () =>
-      request(`/api/documents/${DOC}`, {
-        as: ADA,
-        method: 'PATCH',
-        body: { content: paragraph('second writer'), expectedUpdatedAt: token },
-      }),
-    );
-    // The same token is now stale — the row moved on in the call above. This
-    // is the exact shape of two people editing the same document.
-    await expect('a save carrying a stale token is refused with 409', 409, () =>
-      request(`/api/documents/${DOC}`, {
-        as: ADA,
-        method: 'PATCH',
-        body: { content: paragraph('would have clobbered'), expectedUpdatedAt: token },
-      }),
-    );
-    await expect('a malformed token is rejected', 400, () =>
-      request(`/api/documents/${DOC}`, {
-        as: ADA,
-        method: 'PATCH',
-        body: { content: paragraph('x'), expectedUpdatedAt: 'not-a-date' },
-      }),
-    );
-  }
-}
 
 console.log('\nRevocation');
 await expect('the owner revokes access', 204, () =>
-  request(`/api/documents/${DOC}/shares`, {
-    as: ADA,
-    method: 'DELETE',
-    body: { userId: GRACE },
-  }),
+  request(`/api/documents/${DOC}/shares`, { as: ADA, method: 'DELETE', body: { userId: GRACE } }),
 );
-await expect('the former collaborator is now a stranger', 404, () =>
-  request(`/docs/${DOC}`, { as: GRACE }),
-);
+await expect('the former collaborator is now a stranger', 404, () => request(`/docs/${DOC}`, { as: GRACE }));
 
 console.log(`\n${passed} passed, ${failed} failed`);
 console.log('Run `npm run db:seed` to restore the demo state this mutated.\n');

@@ -1,8 +1,8 @@
-import 'server-only';
+import "server-only";
 
-import { and, desc, eq, or } from 'drizzle-orm';
+import { and, desc, eq, or } from "drizzle-orm";
 
-import { db } from '@/db/client';
+import { db } from "@/db/client";
 import {
   documentShares,
   documents,
@@ -10,8 +10,8 @@ import {
   type Document,
   type TipTapDoc,
   type User,
-} from '@/db/schema';
-import { can, roleFor, type Action, type Role } from '@/lib/authz';
+} from "@/db/schema";
+import { can, roleFor, type Action, type Role } from "@/lib/authz";
 
 export class HttpError extends Error {
   constructor(
@@ -19,7 +19,7 @@ export class HttpError extends Error {
     message: string,
   ) {
     super(message);
-    this.name = 'HttpError';
+    this.name = "HttpError";
   }
 }
 
@@ -69,7 +69,10 @@ export async function getDocumentForUser(
     .innerJoin(users, eq(users.id, documents.ownerId))
     .leftJoin(
       documentShares,
-      and(eq(documentShares.documentId, documents.id), eq(documentShares.userId, userId)),
+      and(
+        eq(documentShares.documentId, documents.id),
+        eq(documentShares.userId, userId),
+      ),
     )
     .where(
       and(
@@ -98,12 +101,14 @@ export async function requireDocument(
   action: Action,
 ): Promise<AccessibleDocument> {
   const found = await getDocumentForUser(documentId, userId);
-  if (!found) throw new HttpError(404, 'Not found');
-  if (!can(found.role, action)) throw new HttpError(403, 'You do not have permission');
+  if (!found) throw new HttpError(404, "Not found");
+  if (!can(found.role, action)) throw new HttpError(403, "You do not have permission");
   return found;
 }
 
-export async function listDashboardDocuments(userId: string): Promise<DashboardDocument[]> {
+export async function listDashboardDocuments(
+  userId: string,
+): Promise<DashboardDocument[]> {
   const rows = await db
     .select({
       id: documents.id,
@@ -117,7 +122,10 @@ export async function listDashboardDocuments(userId: string): Promise<DashboardD
     .innerJoin(users, eq(users.id, documents.ownerId))
     .leftJoin(
       documentShares,
-      and(eq(documentShares.documentId, documents.id), eq(documentShares.userId, userId)),
+      and(
+        eq(documentShares.documentId, documents.id),
+        eq(documentShares.userId, userId),
+      ),
     )
     .where(or(eq(documents.ownerId, userId), eq(documentShares.userId, userId)))
     .orderBy(desc(documents.updatedAt));
@@ -136,68 +144,27 @@ export async function createDocument(
   title: string,
   content: TipTapDoc,
 ): Promise<Document> {
-  const [created] = await db.insert(documents).values({ ownerId, title, content }).returning();
+  const [created] = await db
+    .insert(documents)
+    .values({ ownerId, title, content })
+    .returning();
 
-  if (!created) throw new HttpError(500, 'Could not create document');
+  if (!created) throw new HttpError(500, "Could not create document");
   return created;
 }
 
-/**
- * Thrown when a write would silently overwrite somebody else's edit.
- *
- * Carries the current server state so the caller can show the user what they
- * are actually up against instead of just refusing the save.
- */
-export class ConflictError extends HttpError {
-  constructor(public readonly current: Document) {
-    super(409, 'This document changed since you opened it');
-    this.name = 'ConflictError';
-  }
-}
-
-/**
- * Update a document, optionally guarding against a concurrent write.
- *
- * When `expectedUpdatedAt` is supplied, the timestamp becomes part of the
- * WHERE clause — the classic optimistic-concurrency check. If another writer
- * has touched the row since the caller last read it, zero rows match and we
- * raise a conflict rather than clobbering their work.
- *
- * The check lives in the UPDATE itself, not in a read-then-write pair, because
- * a read-then-write has a race between the two statements that is exactly the
- * bug this is meant to prevent.
- *
- * Passing no `expectedUpdatedAt` is still last-write-wins, which is correct for
- * writes that cannot conflict (a rename by the sole owner, a version restore
- * that has already snapshotted the current state).
- */
 export async function updateDocument(
   documentId: string,
   patch: { title?: string; content?: TipTapDoc },
-  expectedUpdatedAt?: Date,
 ): Promise<Document> {
-  const where = expectedUpdatedAt
-    ? and(eq(documents.id, documentId), eq(documents.updatedAt, expectedUpdatedAt))
-    : eq(documents.id, documentId);
-
   const [updated] = await db
     .update(documents)
     .set({ ...patch, updatedAt: new Date() })
-    .where(where)
+    .where(eq(documents.id, documentId))
     .returning();
 
-  if (updated) return updated;
-
-  // Nothing matched. Distinguish "gone" from "somebody got there first" —
-  // they are different problems and deserve different answers.
-  const [current] = await db
-    .select()
-    .from(documents)
-    .where(eq(documents.id, documentId))
-    .limit(1);
-
-  if (!current) throw new HttpError(404, 'Not found');
-  throw new ConflictError(current);
+  if (!updated) throw new HttpError(404, "Not found");
+  return updated;
 }
 
 export async function deleteDocument(documentId: string): Promise<void> {
@@ -206,11 +173,18 @@ export async function deleteDocument(documentId: string): Promise<void> {
 
 export async function findUserByEmail(email: string): Promise<User | null> {
   const normalizedEmail = email.trim().toLowerCase();
-  const [user] = await db.select().from(users).where(eq(users.email, normalizedEmail)).limit(1);
+  const [user] = await db
+    .select()
+    .from(users)
+    .where(eq(users.email, normalizedEmail))
+    .limit(1);
   return user ?? null;
 }
 
-export async function shareDocument(documentId: string, userId: string): Promise<void> {
+export async function shareDocument(
+  documentId: string,
+  userId: string,
+): Promise<void> {
   await db
     .insert(documentShares)
     .values({ documentId, userId })
@@ -219,17 +193,25 @@ export async function shareDocument(documentId: string, userId: string): Promise
     });
 }
 
-export async function unshareDocument(documentId: string, userId: string): Promise<void> {
+export async function unshareDocument(
+  documentId: string,
+  userId: string,
+): Promise<void> {
   await db
     .delete(documentShares)
-    .where(and(eq(documentShares.documentId, documentId), eq(documentShares.userId, userId)));
+    .where(
+      and(
+        eq(documentShares.documentId, documentId),
+        eq(documentShares.userId, userId),
+      ),
+    );
 }
 
 export async function listCollaborators(
   documentId: string,
   actingUserId: string,
 ): Promise<Collaborator[]> {
-  await requireDocument(documentId, actingUserId, 'share');
+  await requireDocument(documentId, actingUserId, "share");
 
   return db
     .select({
