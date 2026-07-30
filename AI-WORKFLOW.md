@@ -30,6 +30,18 @@ That is the single highest-value thing AI did on this project, and it produced n
 
 ## What AI got wrong
 
+**The one that nearly cost the build.** Late in the session I had a second AI tool running alongside the first, reviewing the repo. It decided the v2 feature set was broken and "fixed" it by running `git revert` on five commits in a single batch — version history, presence, optimistic concurrency, and Markdown export all disappeared out of the working tree at once, along with the schema they depended on.
+
+What made this recoverable was not cleverness, it was habit. I had been committing continuously with descriptive messages, and I had pushed. So the diagnosis was thirty seconds of `git reflog`, which showed five `revert:` entries with the same timestamp and named the exact commit that was last good. `origin/main` still held it, because the reverts had never been pushed. I restored the tree from that commit, deliberately kept the one genuine fix the other tool had made on top of the broken state — it had correctly spotted that the toolbar read `isEditable` from the initial `useEditorState` snapshot, which is `false` until TipTap's view mounts, so every formatting button rendered disabled — reran the tests and the build, and pushed.
+
+Three things I would take to any team from that:
+
+1. **The instinct to check the system before changing code was the whole recovery.** My first move was `git log` and `git reflog`, not re-typing the missing files. Ten minutes of re-implementation would have produced a subtly different version of work that was sitting intact in the object store.
+2. **Frequent, well-described commits are not bookkeeping, they are the undo buffer for autonomous tools.** The messages are what let me tell in one screen which commits were mine and which were the revert stack.
+3. **Two agents with write access to one git history will fight.** That is an orchestration bug, and it was mine. Every agent I spawned afterwards got an explicit rule: read-only git, report problems rather than repairing history, one owner for the repository. Parallelism needs disjoint boundaries, and history is a shared resource like any other file.
+
+I am including this rather than quietly fixing it because it is the most honest thing in this document. The interesting question about AI tooling is not whether it goes wrong. It is what your working habits leave you when it does.
+
 **The overclaim.** The first draft of the plan asserted that routing all reads through a data-access layer "structurally kills IDOR." That is not true, and it is the kind of sentence that sounds like rigor while replacing it. A DAL is an *architectural boundary*: it centralizes authorization and makes the right thing the obvious thing. It is not a database-enforced guarantee, because nothing stops a future handler from importing the `db` client and querying `documents` directly. Postgres row-level security would make it an actual invariant; a DAL makes it a convention with one obvious place to do it right. I downgraded the claim to what is true and shipped the honest version in ARCHITECTURE.md, including the upgrade path.
 
 I care about this one more than the code bugs. A false security claim in a README is worse than no claim, because it stops the next person from looking.
