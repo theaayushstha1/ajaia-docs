@@ -42,7 +42,13 @@ I care about this one more than the code bugs. A false security claim in a READM
 
 I wrote the authorization matrix by hand, as the spec, before the tests existed. That ordering matters: a test suite generated from an implementation asserts that the code does what it does.
 
-The caveat I want stated plainly, because it is the one a reviewer should press on: **a passing unit test on a permission function does not prove the route handlers call it.** `can()` returning `false` for `collaborator × share` is worth nothing if `POST /shares` never asks. That gap is not covered by the suite, and closing it properly needs integration tests against a real database, which did not fit the timebox. So it was closed by hand — the sharing, revoking, and 404-not-403 flows were exercised across two browser sessions, which is the manual step that made me trust the automated one.
+The caveat I want stated plainly, because it is the one a reviewer should press on: **a passing unit test on a permission function does not prove the route handlers call it.** `can()` returning `false` for `collaborator × share` is worth nothing if `POST /shares` never asks.
+
+So I wrote a second layer, `scripts/probe-authz.mjs`, which mints a valid session cookie for each seeded user and drives the deployed HTTP endpoints — 22 assertions covering owner, collaborator, stranger, and signed-out, against the real database. `npm run probe -- <url>`. It starts from authenticated identity and tries to exceed it, because that is the threat model that matters: the interesting attacker here is a legitimate collaborator, not an anonymous stranger.
+
+**It immediately earned its cost.** Every request against the deployment came back "Not signed in" while every unit test passed and localhost worked fine. The cause: `SESSION_SECRET` had been stored via `echo | gcloud secrets create`, so Secret Manager held a trailing newline. Cloud Run's env var was `"abc\n"`; a local `.env.local` parsed the same secret as `"abc"`. Every signature verified locally and failed in production, silently, with nothing logged — the failure mode of a correct implementation reading a subtly different input.
+
+No unit test could have caught that, because the pure functions never touch the environment; that is exactly what makes them testable. It is the clearest example on this project of why "the tests pass" and "it works" are different claims, and why the last verification step has to run against the thing you actually deployed.
 
 ## What is not in this document
 

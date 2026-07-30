@@ -2,7 +2,9 @@
 
 A collaborative document editor: rich-text editing with autosave, `.txt` import, and per-document sharing between users.
 
-<!-- LIVE_URL -->
+**Live:** https://ajaia-docs-yc6d6jarwq-ue.a.run.app
+
+Demo users (no passwords): `ada@ajaia.demo` · `grace@ajaia.demo` · `alan@ajaia.demo`
 
 <!-- SCREENSHOT -->
 
@@ -91,7 +93,18 @@ npm run typecheck
 
 The suite covers three things: the full role × action matrix in `src/lib/authz.ts`, the `.txt` importer in `src/lib/import-text.ts`, and the document-content validator in `src/lib/content-validation.ts`. All three are pure functions with no I/O, which is what makes them worth testing inside a four-hour build — and all three were chosen because their failures are invisible. A broken toolbar button announces itself in one second. A broken permission check announces itself when it is already a breach.
 
-The honest limit of that coverage: proving `can('collaborator', 'share') === false` does not prove the share route ever calls `can`. That gap was closed by hand, exercising the sharing flow across two browser sessions.
+The honest limit of that coverage: proving `can('collaborator', 'share') === false` does not prove the share route ever calls `can`. So there is a second layer that closes exactly that gap:
+
+```bash
+npm run probe                                                # against localhost
+npm run probe -- https://ajaia-docs-yc6d6jarwq-ue.a.run.app  # against the deployment
+```
+
+`scripts/probe-authz.mjs` mints a valid session cookie for each seeded user and drives the real HTTP endpoints, asserting the status code the rules imply — 22 checks covering every row of the "Try to break it" list above. It starts from authenticated identity and tries to exceed it, which is the threat model that actually matters here.
+
+It passes 22/22 against the deployed URL. It also mutates the demo data, so re-run `npm run db:seed` afterwards.
+
+That probe is what caught the one bug that unit tests structurally could not: `SESSION_SECRET` arrived from Secret Manager with a trailing newline, so every signature verified locally and failed in production. The tests never touch the environment, so they passed either way.
 
 ## License
 

@@ -4,7 +4,7 @@
 
 | | |
 | --- | --- |
-| Live app | <!-- LIVE_URL --> |
+| Live app | https://ajaia-docs-yc6d6jarwq-ue.a.run.app |
 | Repository | <!-- REPO_URL --> |
 | Walkthrough video | <!-- VIDEO_URL --> |
 
@@ -22,7 +22,7 @@ No passwords. Pick a user on the landing screen; open a second private window as
 
 | Deliverable | Where it is | Status |
 | --- | --- | --- |
-| Deployed application | <!-- LIVE_URL --> (Cloud Run, us-east1) | Complete |
+| Deployed application | https://ajaia-docs-yc6d6jarwq-ue.a.run.app (Cloud Run, us-east1) | Complete |
 | Source repository | <!-- REPO_URL --> | Complete |
 | README — quickstart, scope, limitations, local setup | [README.md](./README.md) | Complete |
 | Architecture note — data model and six decision records | [ARCHITECTURE.md](./ARCHITECTURE.md) | Complete |

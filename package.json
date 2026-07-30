@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run --config vitest.config.mts",
     "db:push": "drizzle-kit push",
-    "db:seed": "tsx src/db/seed.ts"
+    "db:seed": "tsx src/db/seed.ts",
+    "probe": "node scripts/probe-authz.mjs"
   },
   "dependencies": {
     "@tiptap/pm": "^3.29.2",
