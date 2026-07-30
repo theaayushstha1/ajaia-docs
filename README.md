@@ -6,7 +6,9 @@ A collaborative document editor: rich-text editing with autosave, `.txt` import,
 
 Demo users (no passwords): `ada@ajaia.demo` · `grace@ajaia.demo` · `alan@ajaia.demo`
 
-<!-- SCREENSHOT -->
+![The document editor — Newsreader on the canvas, toolbar and save status in the chrome](docs/images/editor.png)
+
+![The dashboard, split into documents you own and documents shared with you](docs/images/dashboard.png)
 
 ## Reviewer quickstart (60 seconds)
 

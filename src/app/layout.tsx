@@ -41,7 +41,15 @@ export default function RootLayout({
       lang="en"
       className={`${sans.variable} ${serif.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col">{children}</body>
+      <body className="flex min-h-full flex-col">
+        <a
+          href="#main-content"
+          className="fixed left-4 top-4 z-[100] -translate-y-24 rounded-lg bg-ink px-4 py-2 text-sm font-medium text-canvas shadow-[var(--shadow-raised)] transition-transform focus:translate-y-0"
+        >
+          Skip to main content
+        </a>
+        {children}
+      </body>
     </html>
   );
 }

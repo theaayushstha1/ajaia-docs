@@ -135,6 +135,10 @@ export default function DocumentEditor({
   );
   const [title, setTitle] = useState(initialTitle);
   const [saveState, setSaveState] = useState<SaveState>('saved');
+  // Mirror of saveState for listeners that must read it without re-subscribing
+  // (beforeunload). Reading the state variable there would capture whatever it
+  // was when the listener was attached.
+  const saveStateRef = useRef<SaveState>('saved');
 
   const initialSnapshot: DraftSnapshot = {
     title: initialTitle,
@@ -236,13 +240,47 @@ export default function DocumentEditor({
   }, [runSave]);
 
   useEffect(() => {
+    saveStateRef.current = saveState;
+  }, [saveState]);
+
+  useEffect(() => {
     mountedRef.current = true;
 
     return () => {
       mountedRef.current = false;
+      // Flush rather than cancel. Navigating away inside the debounce window
+      // used to drop the last edit silently: the timer was cleared and no
+      // PATCH was ever sent, so the user watched "Saving…" disappear and
+      // assumed it landed. The request outlives the component on purpose.
+      if (isDirty(draftRef.current, savedRef.current, editable, canRename)) {
+        runSaveRef.current();
+      }
       clearSaveTimer();
     };
-  }, [clearSaveTimer]);
+  }, [canRename, clearSaveTimer, editable]);
+
+  /**
+   * Last line of defence for a closing tab. A debounced save cannot complete
+   * once the page is gone, so the browser's own "changes you made may not be
+   * saved" prompt is the only honest thing left — and it only appears if
+   * something registers this listener.
+   */
+  useEffect(() => {
+    function onBeforeUnload(event: BeforeUnloadEvent) {
+      const dirty =
+        isDirty(draftRef.current, savedRef.current, editable, canRename) ||
+        saveStateRef.current === 'error';
+      if (!dirty) return;
+
+      // Fire the pending save anyway: on a reload (as opposed to a close) it
+      // often completes, and it costs nothing if it does not.
+      runSaveRef.current();
+      event.preventDefault();
+    }
+
+    window.addEventListener('beforeunload', onBeforeUnload);
+    return () => window.removeEventListener('beforeunload', onBeforeUnload);
+  }, [canRename, editable]);
 
   const editor = useEditor({
     extensions: [
@@ -349,7 +387,7 @@ export default function DocumentEditor({
   }
 
   return (
-    <main className="document-editor" data-document-id={docId}>
+    <main id="main-content" tabIndex={-1} className="document-editor" data-document-id={docId}>
       <div className="document-editor__chrome">
         <div className="document-editor__title-row">
           <label className="document-editor__sr-only" htmlFor={`document-title-${docId}`}>

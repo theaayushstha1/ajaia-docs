@@ -40,7 +40,11 @@ export default async function LoginPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-center px-6 py-16">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-center px-6 py-16"
+    >
       <div className="rise">
         <p className="font-sans text-[0.7rem] font-medium uppercase tracking-[0.18em] text-ink-muted">
           Ajaia

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { createDocument } from '@/db/dal';
 import { EMPTY_DOC } from '@/db/schema';
+import { validateTipTapContent } from '@/lib/content-validation';
 import { getApiUser } from '@/lib/current-user';
 import { MAX_IMPORT_BYTES, textToTipTapDoc, titleFromFilename } from '@/lib/import-text';
 
@@ -59,9 +60,19 @@ export async function POST(request: Request) {
     // textToTipTapDoc puts every character into a TipTap text node, so markup
     // in the upload stays literal text and can never become live markup.
     const content = textToTipTapDoc(text);
+
+    // Import produces the content, but it still has to satisfy the same
+    // ceilings the editor's own saves do. Otherwise a large .txt creates a
+    // document that opens fine and then fails every subsequent save - the
+    // worst kind of bug, because it looks like the editor is broken.
+    const validated = validateTipTapContent(content);
+    if (!validated.ok) {
+      return NextResponse.json({ error: validated.message }, { status: validated.status });
+    }
+
     const title = titleFromFilename(file.name);
 
-    const doc = await createDocument(user.id, title, content);
+    const doc = await createDocument(user.id, title, validated.content as typeof content);
     return NextResponse.json({ id: doc.id, title: doc.title }, { status: 201 });
   }
 

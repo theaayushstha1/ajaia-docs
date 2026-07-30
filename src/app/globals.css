@@ -31,7 +31,8 @@
   /* Ink */
   --text-primary: #1c1a16;
   --text-secondary: #55504a;
-  --text-muted: #8a837a;
+  /* 4.8:1 against the canvas: small metadata stays AA-readable. */
+  --text-muted: #706960;
 
   /* Rules and edges */
   --border: #ded7ca;

@@ -131,7 +131,7 @@ export default function Dashboard({
   const shared = rows.filter((row) => !row.isOwner);
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-6 py-14">
+    <main id="main-content" tabIndex={-1} className="mx-auto w-full max-w-3xl px-6 py-14">
       <header className="rise flex flex-wrap items-end justify-between gap-6">
         <div>
           <p className="font-sans text-[0.7rem] font-medium uppercase tracking-[0.18em] text-ink-muted">

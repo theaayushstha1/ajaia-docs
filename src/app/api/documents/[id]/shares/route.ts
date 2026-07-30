@@ -38,8 +38,18 @@ export async function POST(request: Request, ctx: RouteContext<'/api/documents/[
   try {
     const { doc } = await requireDocument(id, user.id, 'share');
 
-    const body = await request.json();
-    const email = typeof body?.email === 'string' ? body.email.trim().toLowerCase() : '';
+    let body: Record<string, unknown>;
+    try {
+      const value: unknown = await request.json();
+      if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+        return NextResponse.json({ error: 'Body must be a JSON object' }, { status: 400 });
+      }
+      body = value as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: 'Malformed JSON body' }, { status: 400 });
+    }
+
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
     if (!email) return NextResponse.json({ error: 'An email is required' }, { status: 400 });
 
     const target = await findUserByEmail(email);
@@ -80,8 +90,18 @@ export async function DELETE(request: Request, ctx: RouteContext<'/api/documents
   try {
     await requireDocument(id, user.id, 'share');
 
-    const body = await request.json();
-    const targetUserId = typeof body?.userId === 'string' ? body.userId : '';
+    let body: Record<string, unknown>;
+    try {
+      const value: unknown = await request.json();
+      if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+        return NextResponse.json({ error: 'Body must be a JSON object' }, { status: 400 });
+      }
+      body = value as Record<string, unknown>;
+    } catch {
+      return NextResponse.json({ error: 'Malformed JSON body' }, { status: 400 });
+    }
+
+    const targetUserId = typeof body.userId === 'string' ? body.userId : '';
     if (!isValidUuid(targetUserId)) {
       return NextResponse.json({ error: 'A valid userId is required' }, { status: 400 });
     }

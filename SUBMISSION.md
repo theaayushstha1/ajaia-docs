@@ -31,22 +31,26 @@ No passwords. Pick a user on the landing screen; open a second private window as
 | File upload — `.txt`, 256 KB cap | `src/lib/import-text.ts`, `POST /api/documents` | Complete, `.txt` only by design |
 | Sharing and permissions | `src/lib/authz.ts`, `src/db/dal.ts`, `/api/documents/[id]/shares` | Complete, two roles by design |
 | Content validation on writes | `src/lib/content-validation.ts` | Complete — node allowlist, depth, node-count, 512 KB ceiling |
-| Tests | `authz.test.ts`, `import-text.test.ts`, `content-validation.test.ts` | Unit only; no integration tests |
+| Tests | `authz.test.ts`, `import-text.test.ts`, `content-validation.test.ts` | 55 assertions, all pure functions |
+| Live authorization probe | `scripts/probe-authz.mjs` — `npm run probe -- <url>` | 22/22 against the deployed URL. Drives real HTTP as each seeded user; this is what closes the gap unit tests cannot |
 | Walkthrough video (3–5 min) | <!-- VIDEO_URL --> | Complete |
 | Real-time collaboration | — | Deliberately cut, see ARCHITECTURE D5 |
 
 ## Time spent
 
-| Phase | Approx. | |
+| Phase | Elapsed | |
 | --- | --- | --- |
-| Prior-art research and scope decisions | 25 min | Read the Outline, Docmost, and Papermark schemas before writing anything |
-| Schema, DAL, authorization, tests | 55 min | The part everything else depends on |
-| Editor, autosave, dashboard, share dialog | 75 min | |
-| Import and hardening pass | 25 min | 404-not-403, uuid guard, PATCH allowlist |
-| Deployment — Cloud Run, Cloud SQL, Secret Manager | 40 min | Started early on purpose; deploy problems do not compress |
-| Documentation and video | 40 min | |
+| Prior-art research, scope decisions, plan | 0:00–0:36 | Read the Outline, Docmost, and Papermark schemas before writing a line. The plan was rewritten twice before any code — once to fix an unrealistic schedule, once to cut `.docx`, the role enum, and an overclaim about IDOR |
+| Scaffold, schema, DAL, authorization, tests | 0:36–0:55 | The part everything else depends on, written before any route handler |
+| Editor, dashboard, share dialog, API routes | 0:36–0:55 | Built in parallel with the above against a fixed interface contract |
+| Cloud SQL, Secret Manager, Cloud Run, first deploy | 0:36–0:55 | Deployed a database-backed page, not a hello world, so the whole path was proven at once |
+| Verification and the secret-newline fix | 0:55–1:01 | Wrote the HTTP probe; it found a production-only bug on its first run |
+| Design system pass | 1:01–1:08 | Tokens, the document serif, `.ProseMirror` typography |
+| Documentation, screenshots, video | 1:08 onward | |
 
-<!-- TODO(verify): these are estimates written before the build closed out. Adjust to the real numbers if they moved. -->
+Total elapsed at the point the application was feature-complete, deployed, and passing 22/22 authorization checks against the live URL: **about one hour.** The remaining time went to the design pass, the written deliverables, and the walkthrough.
+
+The honest reason it was fast: the first 36 minutes were spent deciding what *not* to build, and the schema came from three production systems rather than from a blank page.
 
 ## What I would want a reviewer to look at first
 

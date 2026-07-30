@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 export type Collaborator = {
@@ -22,12 +23,15 @@ export default function ShareDialog({
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [revokingUserId, setRevokingUserId] = useState<string | null>(null);
+  const router = useRouter();
 
   const inputRef = useRef<HTMLInputElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const previouslyFocused = document.activeElement as HTMLElement | null;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     inputRef.current?.focus();
 
     function onKeyDown(event: KeyboardEvent) {
@@ -58,6 +62,7 @@ export default function ShareDialog({
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
       previouslyFocused?.focus();
     };
   }, [onClose]);
@@ -87,6 +92,10 @@ export default function ShareDialog({
         current.some((c) => c.userId === body.userId) ? current : [...current, body],
       );
       setEmail('');
+      // The dialog unmounts on close and re-seeds from a server prop, so
+      // without this the next open would show the collaborator list as it was
+      // when the page first rendered - missing whoever was just added.
+      router.refresh();
     } catch {
       setError('Could not share this document. Check your connection and try again.');
     } finally {
@@ -107,6 +116,9 @@ export default function ShareDialog({
 
       if (response.ok) {
         setCollaborators((current) => current.filter((c) => c.userId !== userId));
+        // Same reason as in handleShare: keep the server prop in step, or a
+        // revoked person reappears as still having access on the next open.
+        router.refresh();
         return;
       }
       setError('Could not remove access.');

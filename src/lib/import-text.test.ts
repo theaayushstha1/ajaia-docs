@@ -64,6 +64,22 @@ describe("textToTipTapDoc", () => {
       ],
     });
   });
+
+  it("drops database-invalid control bytes but preserves tabs and line breaks", () => {
+    expect(textToTipTapDoc("A\u0000\tB\nC\u001FD")).toEqual({
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [
+            { type: "text", text: "A\tB" },
+            { type: "hardBreak" },
+            { type: "text", text: "CD" },
+          ],
+        },
+      ],
+    });
+  });
 });
 
 describe("titleFromFilename", () => {

@@ -171,5 +171,7 @@ specifically to undo that inside the document canvas and nowhere else.
   fix, and it is the honest cost of D5.
 - **No pagination.** The dashboard loads every document a user can reach.
 - **No rate limiting** on the share endpoint.
-- **`content` is unbounded.** A large paste becomes a large JSONB value with no
-  ceiling.
+- **Document size is capped, not streamed.** `validateTipTapContent` enforces a
+  512 KiB / 10,000-node / 32-deep ceiling on every write, so a runaway paste is
+  rejected rather than stored — but a genuinely large document has no path at
+  all, where a real product would chunk it.
