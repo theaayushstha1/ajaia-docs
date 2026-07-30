@@ -102,7 +102,9 @@ function Section({
         <h2 className="font-sans text-[0.7rem] font-medium uppercase tracking-[0.16em] text-ink-secondary">
           {title}
         </h2>
-        <span className="font-sans text-[0.7rem] tabular-nums text-ink-muted">{rows.length}</span>
+        <span className="font-sans text-[0.7rem] tabular-nums text-ink-muted">
+          {rows.length}
+        </span>
       </div>
 
       {rows.length === 0 ? (
@@ -162,7 +164,7 @@ export default function Dashboard({
         rows={owned}
         offset={0}
         emptyMessage="Nothing here yet. Create a document, or import a .txt file to turn it into one."
-        />
+      />
       <Section
         title="Shared with me"
         rows={shared}

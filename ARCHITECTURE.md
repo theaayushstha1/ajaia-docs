@@ -85,8 +85,8 @@ could see the feature the assignment actually asks about.
 There is no credential; impersonation is the intended behaviour. What the
 signature buys is integrity — a client cannot edit the cookie to become someone
 else — and integrity is the only property the authorization layer depends on.
-Replacing it with real auth means replacing `src/lib/session.ts` and nothing
-else.
+Replacing it with real auth means replacing the login, session, and
+current-user boundary. The document DAL and permission model stay unchanged.
 
 ### D4 — Plain-text import only, capped at 256 KB
 **Context.** The brief asks for at least one file type to enter the workflow.
@@ -106,7 +106,10 @@ asserts that `<script>alert(1)</script>` in a `.txt` survives as literal text.
 co-edited live.
 **Reasoning.** Not primarily time. A partially-working CRDT loses data, and a
 document tool that loses data is strictly worse than one that never claimed the
-feature. The honest version of this app at this size is single-writer.
+feature. The honest version here is sequential collaboration with
+sequential collaboration: two people may both edit a shared document, but the
+second write is refused rather than allowed to silently overwrite the first
+(see the concurrency note below).
 
 ### D6 — Cloud Run with a Cloud SQL Unix socket
 **Decision.** One container, `--add-cloudsql-instances`, `pg` over the
@@ -166,9 +169,11 @@ specifically to undo that inside the document canvas and nowhere else.
 
 ## What would break at scale
 
-- **Autosave is last-write-wins.** Two people editing a shared document at the
-  same time will clobber each other, silently. This is the first thing I would
-  fix, and it is the honest cost of D5.
+- **Conflicts are detected, not merged.** Every save echoes back the
+  `updatedAt` it last saw; if the row has moved on, `PATCH` answers `409` and
+  the editor shows a banner instead of overwriting the other person. That
+  closes the silent-data-loss hole, but the loser of the race still has to
+  reconcile by hand — real merging is what a CRDT would buy, and that is D5.
 - **No pagination.** The dashboard loads every document a user can reach.
 - **No rate limiting** on the share endpoint.
 - **Document size is capped, not streamed.** `validateTipTapContent` enforces a

@@ -165,13 +165,35 @@
   border: 1px solid transparent;
   border-radius: 0.45rem;
   padding: 0;
-  color: var(--editor-text-secondary);
+  color: var(--editor-text);
   background: transparent;
   font: inherit;
-  font-size: 0.78rem;
-  font-weight: 700;
+  font-size: 0.82rem;
+  font-weight: 600;
   line-height: 1;
   cursor: pointer;
+}
+
+/* The letterform buttons describe themselves: B is bold, I is italic, U is
+   underlined. Cheaper than an icon and unambiguous at any size. */
+.document-editor__tool[aria-label='Bold'] span {
+  font-weight: 800;
+}
+
+.document-editor__tool[aria-label='Italic'] span {
+  font-family: var(--font-newsreader), ui-serif, Georgia, serif;
+  font-style: italic;
+  font-size: 0.95rem;
+}
+
+.document-editor__tool[aria-label='Underline'] span {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.document-editor__tool[aria-label^='Heading'] span {
+  font-variant-numeric: lining-nums;
+  letter-spacing: -0.02em;
 }
 
 .document-editor__tool:hover:not(:disabled) {
@@ -254,7 +276,7 @@
   padding: clamp(2rem, 7vw, 5rem);
   color: var(--editor-text);
   caret-color: var(--editor-accent);
-  font-family: var(--font-newsreader), ui-serif, Georgia, "Times New Roman", serif;
+  font-family: var(--font-newsreader), ui-serif, Georgia, 'Times New Roman', serif;
   font-size: 1.1875rem;
   line-height: 1.72;
   letter-spacing: 0.003em;
@@ -448,7 +470,6 @@
     --editor-success: var(--success, #6ee7b7);
   }
 }
-
 
 @keyframes editor-settle {
   from {

@@ -1,4 +1,4 @@
-import { EMPTY_DOC, type TipTapDoc, type TipTapNode } from "@/db/schema";
+import { EMPTY_DOC, type TipTapDoc, type TipTapNode } from '@/db/schema';
 
 export { EMPTY_DOC };
 export type { TipTapDoc };
@@ -26,41 +26,39 @@ export const MAX_IMPORT_BYTES = 256 * 1024;
  * Tab and newline are deliberately preserved.
  */
 function stripControlCharacters(input: string): string {
-  return input.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "");
+  return input.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
 }
 
 export function textToTipTapDoc(text: string): TipTapDoc {
-  const normalized = stripControlCharacters(stripBom(text)).replace(/\r\n?/g, "\n");
+  const normalized = stripControlCharacters(stripBom(text)).replace(/\r\n?/g, '\n');
 
-  if (normalized.trim() === "") return structuredClone(EMPTY_DOC);
+  if (normalized.trim() === '') return structuredClone(EMPTY_DOC);
 
   const blocks = normalized
     .split(/\n{2,}/)
-    .map((block) => block.replace(/\s+$/, ""))
-    .filter((block) => block.trim() !== "");
+    .map((block) => block.replace(/\s+$/, ''))
+    .filter((block) => block.trim() !== '');
 
   if (blocks.length === 0) return structuredClone(EMPTY_DOC);
 
   return {
-    type: "doc",
+    type: 'doc',
     content: blocks.map(paragraphFromBlock),
   };
 }
 
 function paragraphFromBlock(block: string): TipTapNode {
-  const lines = block.split("\n");
+  const lines = block.split('\n');
   const content: TipTapNode[] = [];
 
   lines.forEach((line, i) => {
-    if (i > 0) content.push({ type: "hardBreak" });
+    if (i > 0) content.push({ type: 'hardBreak' });
     // ProseMirror rejects empty text nodes, so skip them — the hardBreak
     // already carries the line's meaning.
-    if (line.length > 0) content.push({ type: "text", text: line });
+    if (line.length > 0) content.push({ type: 'text', text: line });
   });
 
-  return content.length > 0
-    ? { type: "paragraph", content }
-    : { type: "paragraph" };
+  return content.length > 0 ? { type: 'paragraph', content } : { type: 'paragraph' };
 }
 
 function stripBom(text: string): string {
@@ -72,8 +70,8 @@ function stripBom(text: string): string {
  * Falls back to the default title when the filename has nothing usable.
  */
 export function titleFromFilename(filename: string): string {
-  const base = filename.split(/[\\/]/).pop() ?? "";
-  const withoutExt = base.replace(/\.[^.]+$/, "");
-  const cleaned = withoutExt.replace(/[_-]+/g, " ").trim().replace(/\s+/g, " ");
-  return cleaned === "" ? "Untitled document" : cleaned.slice(0, 200);
+  const base = filename.split(/[\\/]/).pop() ?? '';
+  const withoutExt = base.replace(/\.[^.]+$/, '');
+  const cleaned = withoutExt.replace(/[_-]+/g, ' ').trim().replace(/\s+/g, ' ');
+  return cleaned === '' ? 'Untitled document' : cleaned.slice(0, 200);
 }

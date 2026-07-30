@@ -31,7 +31,7 @@ No passwords. Pick a user on the landing screen; open a second private window as
 | File upload — `.txt`, 256 KB cap | `src/lib/import-text.ts`, `POST /api/documents` | Complete, `.txt` only by design |
 | Sharing and permissions | `src/lib/authz.ts`, `src/db/dal.ts`, `/api/documents/[id]/shares` | Complete, two roles by design |
 | Content validation on writes | `src/lib/content-validation.ts` | Complete — node allowlist, depth, node-count, 512 KB ceiling |
-| Tests | `authz.test.ts`, `import-text.test.ts`, `content-validation.test.ts` | 55 assertions, all pure functions |
+| Tests | `authz.test.ts`, `import-text.test.ts`, `content-validation.test.ts` | 56 assertions, all pure functions |
 | Live authorization probe | `scripts/probe-authz.mjs` — `npm run probe -- <url>` | 22/22 against the deployed URL. Drives real HTTP as each seeded user; this is what closes the gap unit tests cannot |
 | Walkthrough video (3–5 min) | <!-- VIDEO_URL --> | Recorded and linked at submission |
 | Real-time collaboration | — | Deliberately cut, see ARCHITECTURE D5 |

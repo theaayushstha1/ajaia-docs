@@ -144,10 +144,16 @@ export default function ShareDialog({
         aria-describedby="share-dialog-description"
         className="dialog-in w-full max-w-md rounded-xl border border-rule bg-sheet p-6 shadow-[var(--shadow-raised)]"
       >
-        <h2 id="share-dialog-title" className="font-serif text-[1.375rem] tracking-[-0.015em] text-ink">
+        <h2
+          id="share-dialog-title"
+          className="font-serif text-[1.375rem] tracking-[-0.015em] text-ink"
+        >
           Share this document
         </h2>
-        <p id="share-dialog-description" className="mt-1.5 text-sm leading-relaxed text-ink-secondary">
+        <p
+          id="share-dialog-description"
+          className="mt-1.5 text-sm leading-relaxed text-ink-secondary"
+        >
           Anyone you add can read and edit it. Only you can share it or delete it.
         </p>
 
@@ -172,7 +178,10 @@ export default function ShareDialog({
         </form>
 
         {error && (
-          <p role="alert" className="status-in mt-3 rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
+          <p
+            role="alert"
+            className="status-in mt-3 rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger"
+          >
             {error}
           </p>
         )}
@@ -183,13 +192,14 @@ export default function ShareDialog({
           </h3>
 
           {collaborators.length === 0 ? (
-            <p className="mt-3 text-sm text-ink-muted">
-              Only you, for now.
-            </p>
+            <p className="mt-3 text-sm text-ink-muted">Only you, for now.</p>
           ) : (
             <ul className="mt-2 divide-y divide-rule">
               {collaborators.map((collaborator) => (
-                <li key={collaborator.userId} className="flex items-center justify-between py-2">
+                <li
+                  key={collaborator.userId}
+                  className="flex items-center justify-between py-2"
+                >
                   <span className="text-sm text-ink">
                     {collaborator.name}
                     <span className="ml-2 text-ink-muted">{collaborator.email}</span>

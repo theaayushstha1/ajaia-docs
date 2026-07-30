@@ -1,6 +1,6 @@
-import type { Metadata } from "next";
-import { Instrument_Sans, Newsreader } from "next/font/google";
-import "./globals.css";
+import type { Metadata } from 'next';
+import { Instrument_Sans, Newsreader } from 'next/font/google';
+import './globals.css';
 
 /**
  * Two faces, split by role rather than decoration.
@@ -13,22 +13,21 @@ import "./globals.css";
  * is no third-party request from the browser and no layout shift.
  */
 const sans = Instrument_Sans({
-  variable: "--font-instrument-sans",
-  subsets: ["latin"],
-  display: "swap",
+  variable: '--font-instrument-sans',
+  subsets: ['latin'],
+  display: 'swap',
 });
 
 const serif = Newsreader({
-  variable: "--font-newsreader",
-  subsets: ["latin"],
-  display: "swap",
-  style: ["normal", "italic"],
+  variable: '--font-newsreader',
+  subsets: ['latin'],
+  display: 'swap',
+  style: ['normal', 'italic'],
 });
 
 export const metadata: Metadata = {
-  title: "Ajaia Docs",
-  description:
-    "A lightweight collaborative document editor: write, import, and share.",
+  title: 'Ajaia Docs',
+  description: 'A lightweight collaborative document editor: write, import, and share.',
 };
 
 export default function RootLayout({
@@ -37,10 +36,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${sans.variable} ${serif.variable} h-full antialiased`}
-    >
+    <html lang="en" className={`${sans.variable} ${serif.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <a
           href="#main-content"
