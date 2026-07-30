@@ -1,5 +1,5 @@
-import { Pool, type PoolConfig } from 'pg';
-import { drizzle } from 'drizzle-orm/node-postgres';
+import { Pool, type PoolConfig } from "pg";
+import { drizzle } from "drizzle-orm/node-postgres";
 
 /**
  * One pg Pool for the whole process.
@@ -16,11 +16,11 @@ function buildConfig(): PoolConfig {
   const host = process.env.DB_HOST;
 
   const base: PoolConfig = {
-    user: process.env.DB_USER ?? 'postgres',
+    user: process.env.DB_USER ?? "postgres",
     // Trimmed for the same reason as SESSION_SECRET: secrets delivered as env
     // vars routinely carry a trailing newline that only exists in production.
     password: process.env.DB_PASSWORD?.trim(),
-    database: process.env.DB_NAME ?? 'ajaia',
+    database: process.env.DB_NAME ?? "ajaia",
     // Cloud Run scales to zero and can fan out to many instances; keep each
     // container's footprint small so we don't exhaust Cloud SQL connections.
     max: 5,
@@ -36,13 +36,13 @@ function buildConfig(): PoolConfig {
 
   return {
     ...base,
-    host: host ?? '127.0.0.1',
+    host: host ?? "127.0.0.1",
     port: Number(process.env.DB_PORT ?? 5432),
     // Cloud SQL refuses unencrypted connections over a public IP. We skip
     // certificate verification because the server presents a Google-managed
     // CA that isn't in the local trust store; this path is for local
     // development and one-off migrations, never for serving traffic.
-    ssl: process.env.DB_SSL === 'disable' ? undefined : { rejectUnauthorized: false },
+    ssl: process.env.DB_SSL === "disable" ? undefined : { rejectUnauthorized: false },
   };
 }
 
@@ -51,13 +51,13 @@ const globalForDb = globalThis as unknown as { __ajaiaPool?: Pool };
 
 export const pool: Pool = globalForDb.__ajaiaPool ?? new Pool(buildConfig());
 
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== "production") {
   globalForDb.__ajaiaPool = pool;
 }
 
 // Don't let an idle-client error take down the process.
-pool.on('error', (err) => {
-  console.error('[db] idle client error', err);
+pool.on("error", (err) => {
+  console.error("[db] idle client error", err);
 });
 
 export const db = drizzle(pool);

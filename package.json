@@ -11,9 +11,7 @@
     "test": "vitest run --config vitest.config.mts",
     "db:push": "drizzle-kit push",
     "db:seed": "tsx src/db/seed.ts",
-    "probe": "node scripts/probe-authz.mjs",
-    "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "probe": "node scripts/probe-authz.mjs"
   },
   "dependencies": {
     "@tiptap/pm": "^3.29.2",
@@ -35,7 +33,6 @@
     "drizzle-kit": "^0.31.10",
     "eslint": "^9",
     "eslint-config-next": "16.2.12",
-    "prettier": "^3.9.6",
     "tailwindcss": "^4",
     "tsx": "^4.23.1",
     "typescript": "^5",

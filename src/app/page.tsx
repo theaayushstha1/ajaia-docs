@@ -1,8 +1,8 @@
-import Dashboard from '@/components/Dashboard';
-import { listDashboardDocuments } from '@/db/dal';
-import { requireUser } from '@/lib/current-user';
+import Dashboard from "@/components/Dashboard";
+import { listDashboardDocuments } from "@/db/dal";
+import { requireUser } from "@/lib/current-user";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const user = await requireUser();

@@ -1,4 +1,4 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
 /* ===========================================================================
    Ajaia Docs — "editorial paper"
@@ -133,7 +133,7 @@ body {
 /* Very fine paper grain. No image request, and it stops large flat areas from
    reading as flat digital grey. */
 body::before {
-  content: '';
+  content: "";
   position: fixed;
   inset: 0;
   z-index: 0;

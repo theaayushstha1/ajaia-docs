@@ -84,16 +84,7 @@ export default async function LoginPage() {
                   aria-hidden
                   className="translate-x-0 text-ink-muted transition-transform duration-200 group-hover:translate-x-1"
                 >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12h14M13 6l6 6-6 6" />
                   </svg>
                 </span>
@@ -105,18 +96,19 @@ export default async function LoginPage() {
 
       {demoUsers.length === 0 && (
         <p className="mt-8 rounded-lg border border-rule bg-danger-soft px-4 py-3 text-sm text-danger">
-          No demo users found. Run <code className="font-mono">npm run db:seed</code> to create
-          them.
+          No demo users found. Run <code className="font-mono">npm run db:seed</code> to create them.
         </p>
       )}
 
-      <div className="rise mt-10 border-t border-rule pt-5" style={{ animationDelay: '360ms' }}>
+      <div
+        className="rise mt-10 border-t border-rule pt-5"
+        style={{ animationDelay: '360ms' }}
+      >
         <p className="text-[0.8125rem] leading-relaxed text-ink-muted">
-          <span className="font-medium text-ink-secondary">
-            This is simulated identity, not authentication.
-          </span>{' '}
-          There are no passwords — picking a name issues a signed session cookie so sharing can
-          be tested without creating accounts. Open a private window as a second user to see a
+          <span className="font-medium text-ink-secondary">This is simulated identity, not
+          authentication.</span>{' '}
+          There are no passwords — picking a name issues a signed session cookie so sharing can be
+          tested without creating accounts. Open a private window as a second user to see a
           document arrive.
         </p>
       </div>

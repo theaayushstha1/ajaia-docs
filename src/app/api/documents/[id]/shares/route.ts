@@ -62,7 +62,10 @@ export async function POST(request: Request, ctx: RouteContext<'/api/documents/[
     }
 
     if (target.id === doc.ownerId) {
-      return NextResponse.json({ error: 'They already own this document' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'They already own this document' },
+        { status: 400 },
+      );
     }
 
     // Idempotent: sharing twice is a no-op rather than a constraint error.
@@ -77,10 +80,7 @@ export async function POST(request: Request, ctx: RouteContext<'/api/documents/[
 }
 
 /** DELETE /api/documents/[id]/shares — revoke access. Owner only. */
-export async function DELETE(
-  request: Request,
-  ctx: RouteContext<'/api/documents/[id]/shares'>,
-) {
+export async function DELETE(request: Request, ctx: RouteContext<'/api/documents/[id]/shares'>) {
   const user = await getApiUser();
   if (!user) return NextResponse.json({ error: 'Not signed in' }, { status: 401 });
 

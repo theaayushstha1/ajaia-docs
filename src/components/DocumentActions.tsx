@@ -43,9 +43,7 @@ export default function DocumentActions() {
     // Check client-side as well as server-side: without this the user waits
     // for a full upload only to be rejected, with no useful explanation.
     if (file.size > MAX_IMPORT_KB * 1024) {
-      setError(
-        `That file is ${(file.size / 1024).toFixed(0)} KB. The limit is ${MAX_IMPORT_KB} KB.`,
-      );
+      setError(`That file is ${(file.size / 1024).toFixed(0)} KB. The limit is ${MAX_IMPORT_KB} KB.`);
       return;
     }
 
