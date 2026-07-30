@@ -119,7 +119,7 @@ export default function ShareDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/40 p-4"
+      className="scrim-in fixed inset-0 z-50 flex items-center justify-center bg-[rgb(28_26_22/45%)] p-4"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -130,12 +130,12 @@ export default function ShareDialog({
         aria-modal="true"
         aria-labelledby="share-dialog-title"
         aria-describedby="share-dialog-description"
-        className="w-full max-w-md rounded-xl border border-neutral-200 bg-white p-6 shadow-xl"
+        className="dialog-in w-full max-w-md rounded-xl border border-rule bg-sheet p-6 shadow-[var(--shadow-raised)]"
       >
-        <h2 id="share-dialog-title" className="text-lg font-semibold text-neutral-900">
+        <h2 id="share-dialog-title" className="font-serif text-[1.375rem] tracking-[-0.015em] text-ink">
           Share this document
         </h2>
-        <p id="share-dialog-description" className="mt-1 text-sm text-neutral-600">
+        <p id="share-dialog-description" className="mt-1.5 text-sm leading-relaxed text-ink-secondary">
           Anyone you add can read and edit it. Only you can share it or delete it.
         </p>
 
@@ -148,45 +148,45 @@ export default function ShareDialog({
             onChange={(event) => setEmail(event.target.value)}
             placeholder="grace@ajaia.demo"
             aria-label="Email address"
-            className="flex-1 rounded-md border border-neutral-300 px-3 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-neutral-900"
+            className="flex-1 rounded-lg border border-rule bg-canvas px-3 py-2 text-sm text-ink transition-colors duration-200 placeholder:text-ink-muted hover:border-rule-strong"
           />
           <button
             type="submit"
             disabled={busy || !email.trim()}
-            className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-contrast transition-all duration-200 hover:bg-accent-hover disabled:opacity-40"
           >
             {busy ? 'Sharing…' : 'Share'}
           </button>
         </form>
 
         {error && (
-          <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p role="alert" className="status-in mt-3 rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
             {error}
           </p>
         )}
 
         <div className="mt-6">
-          <h3 className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+          <h3 className="text-[0.7rem] font-medium uppercase tracking-[0.16em] text-ink-secondary">
             People with access
           </h3>
 
           {collaborators.length === 0 ? (
-            <p className="mt-2 text-sm text-neutral-500">
+            <p className="mt-3 text-sm text-ink-muted">
               Only you, for now.
             </p>
           ) : (
-            <ul className="mt-2 divide-y divide-neutral-100">
+            <ul className="mt-2 divide-y divide-rule">
               {collaborators.map((collaborator) => (
                 <li key={collaborator.userId} className="flex items-center justify-between py-2">
-                  <span className="text-sm text-neutral-900">
+                  <span className="text-sm text-ink">
                     {collaborator.name}
-                    <span className="ml-2 text-neutral-500">{collaborator.email}</span>
+                    <span className="ml-2 text-ink-muted">{collaborator.email}</span>
                   </span>
                   <button
                     type="button"
                     onClick={() => handleRevoke(collaborator.userId)}
                     disabled={revokingUserId !== null}
-                    className="rounded px-2 py-1 text-xs text-neutral-500 transition hover:bg-red-50 hover:text-red-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+                    className="rounded-md px-2 py-1 text-xs text-ink-muted transition-colors duration-200 hover:bg-danger-soft hover:text-danger"
                   >
                     {revokingUserId === collaborator.userId ? 'Removing…' : 'Remove'}
                   </button>
@@ -200,7 +200,7 @@ export default function ShareDialog({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md border border-neutral-300 px-4 py-2 text-sm text-neutral-700 transition hover:bg-neutral-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-900"
+            className="rounded-lg border border-rule px-4 py-2 text-sm text-ink-secondary transition-colors duration-200 hover:border-rule-strong hover:text-ink"
           >
             Done
           </button>

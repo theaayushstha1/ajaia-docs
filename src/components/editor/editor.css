@@ -15,6 +15,12 @@
   background: var(--editor-bg);
 }
 
+.document-editor__toolbar,
+.document-editor__title-row,
+.document-editor__save-state {
+  font-family: var(--font-instrument-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
 .document-editor__chrome {
   position: sticky;
   top: 3.45rem;
@@ -143,7 +149,14 @@
   gap: 0.125rem;
 }
 
+/* Springy but tiny. The toolbar should feel mechanical, like pressing a key,
+   not like a bouncing card. */
 .document-editor__tool {
+  transition:
+    background-color 160ms var(--ease-out, ease),
+    border-color 160ms var(--ease-out, ease),
+    color 160ms var(--ease-out, ease),
+    transform 180ms var(--ease-spring, ease);
   display: inline-grid;
   width: 2.35rem;
   min-width: 2.35rem;
@@ -165,6 +178,11 @@
   border-color: var(--editor-border);
   color: var(--editor-text);
   background: var(--editor-bg);
+  transform: translateY(-1px);
+}
+
+.document-editor__tool:active:not(:disabled) {
+  transform: translateY(0) scale(0.94);
 }
 
 .document-editor__tool[aria-pressed='true'] {
@@ -200,6 +218,7 @@
 }
 
 .document-editor__sheet {
+  animation: editor-settle 560ms var(--ease-out, cubic-bezier(0.2, 0.7, 0.3, 1)) both;
   width: min(100%, 51rem);
   min-height: min(66rem, calc(100dvh - 12rem));
   margin-inline: auto;
@@ -226,14 +245,20 @@
   min-height: inherit;
 }
 
+/* The canvas is set in the reading serif, not the UI sans. A document should
+   look like a document — this single declaration is most of the difference
+   between "text area" and "page". Optical sizing and old-style figures come
+   free with the variable font. */
 .document-editor .ProseMirror {
   min-height: inherit;
   padding: clamp(2rem, 7vw, 5rem);
   color: var(--editor-text);
   caret-color: var(--editor-accent);
-  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 1rem;
-  line-height: 1.7;
+  font-family: var(--font-newsreader), ui-serif, Georgia, "Times New Roman", serif;
+  font-size: 1.1875rem;
+  line-height: 1.72;
+  letter-spacing: 0.003em;
+  font-variant-numeric: oldstyle-nums;
   overflow-wrap: anywhere;
 }
 
@@ -246,7 +271,8 @@
 .document-editor .ProseMirror h3 {
   margin: 1.45em 0 0.55em;
   color: var(--editor-text);
-  font-weight: 720;
+  font-family: var(--font-newsreader), ui-serif, Georgia, serif;
+  font-weight: 620;
   line-height: 1.2;
   letter-spacing: -0.025em;
 }
@@ -420,5 +446,58 @@
     --editor-muted: var(--text-muted, #a8a29e);
     --editor-danger: var(--danger, #fca5a5);
     --editor-success: var(--success, #6ee7b7);
+  }
+}
+
+
+@keyframes editor-settle {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The status label swaps rather than snapping between states. */
+.document-editor__save-state > span {
+  animation: editor-status-in 260ms var(--ease-out, ease) both;
+}
+
+@keyframes editor-status-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.document-editor__save-state.is-saved .document-editor__status-dot {
+  animation: editor-pip-land 340ms var(--ease-spring, ease) both;
+}
+
+@keyframes editor-pip-land {
+  from {
+    transform: scale(0.4);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .document-editor__sheet,
+  .document-editor__save-state > span,
+  .document-editor__save-state.is-saved .document-editor__status-dot {
+    animation: none;
+  }
+
+  .document-editor__tool {
+    transition: none;
   }
 }
