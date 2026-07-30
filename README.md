@@ -14,20 +14,21 @@ Demo users (no passwords): `ada@ajaia.demo` · `grace@ajaia.demo` · `alan@ajaia
 
 1. Open the live URL. You land on an identity picker with three seeded users: **Ada Lovelace**, **Grace Hopper**, **Alan Turing**. Pick Ada. There is no password.
 2. Click **New document**, type something, apply a heading and a bullet list, then hard-refresh. The content is still there.
-3. Click **Share**, enter `grace@ajaia.demo`, and confirm she appears under *People with access*.
+3. Click **Share**, enter `grace@ajaia.demo`, and confirm she appears under _People with access_.
 4. Open a private window, pick Grace, and find the document under **Shared with me**. She can edit the body. She cannot rename, delete, or re-share it.
 
 ## What this is
 
-| Built | Deliberately not built |
-| --- | --- |
-| TipTap editor: bold, italic, underline, three heading levels, ordered and bulleted lists | Real-time co-editing (CRDT / OT / presence) |
-| Autosave debounced at 750 ms, with a Saving / Saved / Couldn't save indicator | Comments, suggestions, version history |
-| Create, rename, edit, reopen, delete documents | Public or link-based sharing |
-| Import `.txt`, capped at 256 KB | Permission tiers beyond owner and collaborator |
-| Share with another user by email; owner can revoke | `.docx` import, any export |
-| Dashboard split into *Owned by me* and *Shared with me* | Real authentication |
-| Postgres 16 on Cloud SQL, deployed to Cloud Run | Pagination, search, folders |
+| Built                                                                                        | Deliberately not built                         |
+| -------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| TipTap editor: bold, italic, underline, three heading levels, ordered and bulleted lists     | Real-time text merging (CRDT / OT)             |
+| Autosave plus optimistic concurrency: stale writes receive `409` instead of overwriting work | Comments and suggestion mode                   |
+| Create, rename, edit, reopen, delete documents                                               | Public or link-based sharing                   |
+| Import `.txt`, capped at 256 KB                                                              | Permission tiers beyond owner and collaborator |
+| Share by email; owner can revoke; active-viewer presence                                     | `.docx` import                                 |
+| Version checkpoints with reversible owner restore; Markdown export                           | Real authentication                            |
+| Dashboard split into _Owned by me_ and _Shared with me_                                      | Pagination, search, folders                    |
+| Postgres 16 on Cloud SQL, deployed to Cloud Run                                              | Advanced role hierarchy                        |
 
 The cuts are argued in [ARCHITECTURE.md](./ARCHITECTURE.md); the AI process behind them is in [AI-WORKFLOW.md](./AI-WORKFLOW.md).
 
@@ -53,14 +54,14 @@ The cuts are argued in [ARCHITECTURE.md](./ARCHITECTURE.md); the AI process behi
 
 ## Known limitations
 
-| Limitation | Why I accepted it | What I'd do with 2 more hours |
-| --- | --- | --- |
+| Limitation                                                                                             | Why I accepted it                                                                                                                                                                            | What I'd do with 2 more hours                                                                                                   |
+| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
 | Concurrent edits are detected, not merged: the second writer gets a `409` and has to reconcile by hand | A partial CRDT inside the timebox would have lost data, and a document tool that loses data is worse than one that never claimed the feature. Refusing the write is the honest middle ground | Keep the precondition, and add per-field merging so a title change and a body change on the same document stop colliding at all |
-| Simulated identity, not authentication | The assignment's subject is sharing and access control; real auth would cost an hour and make the reviewer create two accounts before seeing it | Replace the login/session/current-user boundary with Auth.js; the DAL and permission model stay unchanged |
-| Sharing an unknown email returns "No user with that email address" — an account-enumeration oracle | With three fixed demo users there is nothing to enumerate, and a vague error would make the feature untestable | Send an invitation and always return 202, so the response stops depending on whether the account exists |
-| The DAL is a convention, not a database-enforced guarantee | It centralizes authorization into one obvious place, which is most of the value for a fraction of the cost | Postgres row-level security keyed on a session GUC, which turns the convention into an invariant |
-| `.txt` import only | `.docx` conversion is untrusted-input parsing, and mammoth's own docs say it does not sanitize its output | Convert server-side straight into TipTap nodes, never HTML, against the same allowlist |
-| Dashboard unpaginated, share endpoint unrated | Neither bites at this size, and both are additive later | Keyset pagination on `updatedAt`; a per-user token bucket on share |
+| Simulated identity, not authentication                                                                 | The assignment's subject is sharing and access control; real auth would cost an hour and make the reviewer create two accounts before seeing it                                              | Replace the login/session/current-user boundary with Auth.js; the DAL and permission model stay unchanged                       |
+| Sharing an unknown email returns "No user with that email address" — an account-enumeration oracle     | With three fixed demo users there is nothing to enumerate, and a vague error would make the feature untestable                                                                               | Send an invitation and always return 202, so the response stops depending on whether the account exists                         |
+| The DAL is a convention, not a database-enforced guarantee                                             | It centralizes authorization into one obvious place, which is most of the value for a fraction of the cost                                                                                   | Postgres row-level security keyed on a session GUC, which turns the convention into an invariant                                |
+| `.txt` import only                                                                                     | `.docx` conversion is untrusted-input parsing, and mammoth's own docs say it does not sanitize its output                                                                                    | Convert server-side straight into TipTap nodes, never HTML, against the same allowlist                                          |
+| Dashboard unpaginated, share endpoint unrated                                                          | Neither bites at this size, and both are additive later                                                                                                                                      | Keyset pagination on `updatedAt`; a per-user token bucket on share                                                              |
 
 ## Running locally
 
@@ -79,7 +80,7 @@ DB_NAME=ajaia
 SESSION_SECRET=replace-me-with-at-least-32-characters-long
 EOF
 
-npm run db:push   # create the three tables
+npm run db:push   # create the five tables
 npm run db:seed   # insert Ada, Grace, and Alan
 npm run dev       # http://localhost:3000
 ```
@@ -93,7 +94,7 @@ npm test        # vitest
 npm run typecheck
 ```
 
-The suite covers three things: the full role × action matrix in `src/lib/authz.ts`, the `.txt` importer in `src/lib/import-text.ts`, and the document-content validator in `src/lib/content-validation.ts`. All three are pure functions with no I/O, which is what makes them worth testing inside a four-hour build — and all three were chosen because their failures are invisible. A broken toolbar button announces itself in one second. A broken permission check announces itself when it is already a breach.
+The 104-test suite covers the full role × action matrix in `src/lib/authz.ts`, the `.txt` importer, the document-content validator, and structured TipTap-to-Markdown export. These are pure functions with no I/O, which makes them fast and deterministic inside a timeboxed build. They were chosen because their failures can be subtle: malformed content, escaping mistakes, and permission errors are easy to miss in a happy-path clickthrough.
 
 The honest limit of that coverage: proving `can('collaborator', 'share') === false` does not prove the share route ever calls `can`. So there is a second layer that closes exactly that gap:
 
@@ -102,9 +103,9 @@ npm run probe                                                # against localhost
 npm run probe -- https://ajaia-docs-yc6d6jarwq-ue.a.run.app  # against the deployment
 ```
 
-`scripts/probe-authz.mjs` mints a valid session cookie for each seeded user and drives the real HTTP endpoints, asserting the status code the rules imply — 22 checks covering every row of the "Try to break it" list above. It starts from authenticated identity and tries to exceed it, which is the threat model that actually matters here.
+`scripts/probe-authz.mjs` mints a valid session cookie for each seeded user and drives the real HTTP endpoints, asserting the status code the rules imply — 25 checks covering signed-out, owner, collaborator, stranger, optimistic-concurrency, and revocation boundaries. It starts from authenticated identity and tries to exceed it, which is the threat model that actually matters here.
 
-It passes 22/22 against the deployed URL. It also mutates the demo data, so re-run `npm run db:seed` afterwards.
+It passes 25/25 against the deployed URL. It also mutates the demo data, so re-run `npm run db:seed` afterwards.
 
 That probe is what caught the one bug that unit tests structurally could not: `SESSION_SECRET` arrived from Secret Manager with a trailing newline, so every signature verified locally and failed in production. The tests never touch the environment, so they passed either way.
 
