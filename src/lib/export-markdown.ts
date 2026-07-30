@@ -289,7 +289,9 @@ function finalize(markdown: string): string {
     .replace(/^[ \t]+$/gm, "")
     .replace(/\n{3,}/g, "\n\n");
 
-  const trimmed = cleaned.replace(/\s+$/, "");
+  // Leading blanks come from empty paragraphs at the top of a document, which
+  // carry no meaning in a file the way they do on a page.
+  const trimmed = cleaned.replace(/^\n+/, "").replace(/\s+$/, "");
   return trimmed === "" ? "" : `${trimmed}\n`;
 }
 
