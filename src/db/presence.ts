@@ -1,10 +1,11 @@
 import 'server-only';
 
 import { and, eq, ne, sql } from 'drizzle-orm';
+import { index, pgTable, primaryKey, timestamp, uuid } from 'drizzle-orm/pg-core';
 
 import { db } from '@/db/client';
 import { requireDocument } from '@/db/dal';
-import { documentPresence, users } from '@/db/schema';
+import { users } from '@/db/schema';
 
 /**
  * Presence — "who else is looking at this document right now".
@@ -39,13 +40,34 @@ import { documentPresence, users } from '@/db/schema';
  */
 
 /**
- * The table lives in src/db/schema.ts (`documentPresence`), alongside every
- * other table, so drizzle-kit — which reads only that file — stays the single
- * source of truth for the physical schema. Its composite PK on
- * (document_id, user_id) is what makes the heartbeat below an upsert rather
- * than an ever-growing append log, and its index on (document_id, last_seen_at)
- * backs the viewer lookup.
+ * The Drizzle definition of the presence table.
+ *
+ * NOTE FOR WHOEVER OWNS src/db/schema.ts: the physical table already exists in
+ * the deployed database (verified against information_schema), but schema.ts
+ * does not export a `documentPresence` definition, so this file carries one.
+ * It mirrors the live columns exactly. When the canonical definition lands in
+ * schema.ts, delete this block and import it from there instead — nothing else
+ * in this file changes.
+ *
+ * This matters beyond tidiness: drizzle.config.ts points only at schema.ts, so
+ * while the table is absent from that file, a `drizzle-kit push` sees
+ * `document_presence` as an unknown table and may offer to drop it.
  */
+export const documentPresence = pgTable(
+  'document_presence',
+  {
+    documentId: uuid('document_id').notNull(),
+    userId: uuid('user_id').notNull(),
+    lastSeenAt: timestamp('last_seen_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [
+    // One row per (document, viewer) — the composite PK is what makes the
+    // heartbeat an upsert instead of an ever-growing append log.
+    primaryKey({ columns: [t.documentId, t.userId] }),
+    // Backs the "recent viewers of this document" lookup.
+    index('document_presence_doc_seen_idx').on(t.documentId, t.lastSeenAt),
+  ],
+);
 
 /**
  * How long a heartbeat counts for. Anyone whose last heartbeat is older than

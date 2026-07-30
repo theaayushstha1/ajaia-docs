@@ -7,7 +7,6 @@ import { useCallback, useRef, useState } from 'react';
 import DocumentEditor from '@/components/editor/DocumentEditor';
 import PresenceBar from '@/components/PresenceBar';
 import ShareDialog, { type Collaborator } from '@/components/ShareDialog';
-import VersionHistory from '@/components/VersionHistory';
 
 export type WorkspaceProps = {
   docId: string;
@@ -32,7 +31,6 @@ export default function DocumentWorkspace({
 }: WorkspaceProps) {
   const router = useRouter();
   const [shareOpen, setShareOpen] = useState(false);
-  const [historyOpen, setHistoryOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [conflict, setConflict] = useState<{ title: string; updatedAt: string } | null>(null);
 
@@ -164,25 +162,6 @@ export default function DocumentWorkspace({
 
             <span className="hidden text-xs text-ink-muted sm:inline">{currentUserName}</span>
 
-            <button
-              type="button"
-              onClick={() => setHistoryOpen(true)}
-              className="rounded-lg px-3 py-1.5 text-sm text-ink-secondary transition-colors duration-200 hover:bg-canvas hover:text-ink"
-            >
-              History
-            </button>
-
-            {/* A plain link, not a fetch: letting the browser handle the
-                Content-Disposition response is what makes this a real download
-                rather than a blob we have to construct and revoke. */}
-            <a
-              href={`/api/documents/${docId}/export`}
-              download
-              className="rounded-lg px-3 py-1.5 text-sm text-ink-secondary transition-colors duration-200 hover:bg-canvas hover:text-ink"
-            >
-              Export
-            </a>
-
             {isOwner && (
               <>
                 <button
@@ -236,21 +215,6 @@ export default function DocumentWorkspace({
           docId={docId}
           initialCollaborators={initialCollaborators}
           onClose={() => setShareOpen(false)}
-        />
-      )}
-
-      {historyOpen && (
-        <VersionHistory
-          docId={docId}
-          canEdit
-          onRestored={() => {
-            setHistoryOpen(false);
-            setConflict(null);
-            // A restore rewrites the row, so every token this client holds is
-            // stale. Refetch rather than trying to reconcile in place.
-            router.refresh();
-          }}
-          onClose={() => setHistoryOpen(false)}
         />
       )}
     </div>
