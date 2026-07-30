@@ -1,0 +1,61 @@
+{
+  "note": "EXAMPLE fixture. The recorder writes the real demo/out/timeline.json. Safe to delete.",
+  "durationMs": 196653,
+  "scenes": [
+    {
+      "id": "open",
+      "startMs": 0,
+      "endMs": 14248
+    },
+    {
+      "id": "edit",
+      "startMs": 14648,
+      "endMs": 35515
+    },
+    {
+      "id": "persist",
+      "startMs": 35915,
+      "endMs": 48455
+    },
+    {
+      "id": "import",
+      "startMs": 48855,
+      "endMs": 68500
+    },
+    {
+      "id": "share",
+      "startMs": 68900,
+      "endMs": 87974
+    },
+    {
+      "id": "presence",
+      "startMs": 88374,
+      "endMs": 116010
+    },
+    {
+      "id": "conflict",
+      "startMs": 116410,
+      "endMs": 135332
+    },
+    {
+      "id": "permissions",
+      "startMs": 135732,
+      "endMs": 158299
+    },
+    {
+      "id": "history",
+      "startMs": 158699,
+      "endMs": 177861
+    },
+    {
+      "id": "export",
+      "startMs": 178261,
+      "endMs": 188911
+    },
+    {
+      "id": "close",
+      "startMs": 189311,
+      "endMs": 196253
+    }
+  ]
+}

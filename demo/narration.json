@@ -1,0 +1,61 @@
+{
+  "voiceSettings": { "stability": 0.45, "similarity_boost": 0.8, "style": 0.15, "speed": 1.0 },
+  "wordsPerMinute": 155,
+  "lines": [
+    {
+      "sceneId": "open",
+      "text": "This is Ajaia Docs. A document editor with autosave, file import, and per document sharing. The dashboard splits what you own from what's shared with you. Then the decision I'd defend hardest.",
+      "estimatedSeconds": 12.39
+    },
+    {
+      "sceneId": "edit",
+      "text": "Editing is TipTap. Bold, italic, underline, three heading levels, and both list types. Every change is debounced and saved automatically, seven hundred fifty milliseconds after you stop typing. That's the indicator up here going from Saving to Saved. This isn't a text area. Underneath it's a structured document model.",
+      "estimatedSeconds": 18.97
+    },
+    {
+      "sceneId": "persist",
+      "text": "Hard refresh. It's all still there. Content lives in Postgres as the editor's structured J S O N, never as markup. That choice pays off twice later.",
+      "estimatedSeconds": 10.45
+    },
+    {
+      "sceneId": "import",
+      "text": "Import takes plain text, capped at two hundred fifty six kilobytes. Look at the last line. That's a script tag, and it renders as text, not as markup. The importer puts every character into a text node. There's no path where an uploaded file becomes live markup.",
+      "estimatedSeconds": 18.19
+    },
+    {
+      "sceneId": "share",
+      "text": "Sharing is by email. Ada owns this document. She's giving Grace access. Two roles. Owner reads, edits, renames, deletes, and shares. Collaborator reads and edits the body. Renaming is owner only, because the title is how this document shows up on someone else's dashboard.",
+      "estimatedSeconds": 17.03
+    },
+    {
+      "sceneId": "presence",
+      "text": "Grace opens the same document. Her avatar appears in Ada's header. This is a heartbeat, not a websocket. Each client writes a row every fifteen seconds. Cloud Run scales to zero, so a container has nowhere to hold a live connection. A socket would mean a second always on service for something decorative. Someone can appear a poll late. The platform makes the cruder design the correct one.",
+      "estimatedSeconds": 26.32
+    },
+    {
+      "sceneId": "conflict",
+      "text": "Grace types and saves. Ada types next, on a copy that's already stale. Her save is refused with a four oh nine, and this banner appears. Every save carries the timestamp it was based on, so a stale write matches zero rows. Silent clobbering was the worst thing about the first version.",
+      "estimatedSeconds": 20.13
+    },
+    {
+      "sceneId": "permissions",
+      "text": "Grace's window. No Share button, no Delete button. Alan, who this was never shared with, opens the document id. He gets a four oh four, not a four oh three. A four oh three would confirm the document exists. Every access goes through one data layer, and the permission check lives in the where clause.",
+      "estimatedSeconds": 21.29
+    },
+    {
+      "sceneId": "history",
+      "text": "History lists every version with an author and a time. Snapshots happen per editing session, not per save, because autosave fires constantly. Restoring takes a snapshot first, so the restore is itself undoable. A restore you can't undo is worse than no history at all.",
+      "estimatedSeconds": 17.42
+    },
+    {
+      "sceneId": "export",
+      "text": "Export walks the J S O N into Markdown, escaping anything Markdown would read as formatting. The mirror of the importer's promise.",
+      "estimatedSeconds": 8.52
+    },
+    {
+      "sceneId": "close",
+      "text": "Real time co editing was cut on purpose. A half working C R D T loses data. That's a boundary, not a backlog.",
+      "estimatedSeconds": 8.9
+    }
+  ]
+}

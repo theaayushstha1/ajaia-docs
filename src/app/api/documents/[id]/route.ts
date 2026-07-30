@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
 
-import { HttpError, deleteDocument, isValidUuid, requireDocument, updateDocument } from '@/db/dal';
+import {
+  ConflictError,
+  HttpError,
+  deleteDocument,
+  isValidUuid,
+  requireDocument,
+  updateDocument,
+} from '@/db/dal';
 import type { TipTapDoc } from '@/db/schema';
 import { validateTipTapContent } from '@/lib/content-validation';
 import { getApiUser } from '@/lib/current-user';
@@ -11,6 +18,22 @@ export const dynamic = 'force-dynamic';
 const MAX_TITLE_LENGTH = 200;
 
 function errorResponse(error: unknown) {
+  // A conflict is not really an error condition, it is a negotiation: send
+  // back what the server currently holds so the client can offer the user a
+  // real choice instead of a dead end.
+  if (error instanceof ConflictError) {
+    return NextResponse.json(
+      {
+        error: error.message,
+        conflict: {
+          title: error.current.title,
+          content: error.current.content,
+          updatedAt: error.current.updatedAt,
+        },
+      },
+      { status: 409 },
+    );
+  }
   if (error instanceof HttpError) {
     return NextResponse.json({ error: error.message }, { status: error.status });
   }
@@ -73,12 +96,35 @@ export async function PATCH(request: Request, ctx: RouteContext<'/api/documents/
       patch.content = result.content as TipTapDoc;
     }
 
+    // Optimistic concurrency. The client echoes back the `updatedAt` it last
+    // saw; if the row has moved on since then, the write is refused rather
+    // than silently overwriting whoever got there first. Omitting the field
+    // keeps the old last-write-wins behaviour, so this stays backward
+    // compatible for callers that do not care (a rename, a restore).
+    let expectedUpdatedAt: Date | undefined;
+    if (typeof body.expectedUpdatedAt === 'string') {
+      const parsed = new Date(body.expectedUpdatedAt);
+      if (Number.isNaN(parsed.getTime())) {
+        return NextResponse.json(
+          { error: 'expectedUpdatedAt must be an ISO timestamp' },
+          { status: 400 },
+        );
+      }
+      expectedUpdatedAt = parsed;
+    }
+
     if (Object.keys(patch).length === 0) {
       return NextResponse.json({ error: 'Nothing to update' }, { status: 400 });
     }
 
-    const updated = await updateDocument(id, patch);
-    return NextResponse.json({ id: updated.id, title: updated.title, updatedAt: updated.updatedAt });
+    const updated = await updateDocument(id, patch, expectedUpdatedAt);
+    // updatedAt comes back on every save so the client can carry the new
+    // token into its next write without a refetch.
+    return NextResponse.json({
+      id: updated.id,
+      title: updated.title,
+      updatedAt: updated.updatedAt,
+    });
   } catch (error) {
     return errorResponse(error);
   }

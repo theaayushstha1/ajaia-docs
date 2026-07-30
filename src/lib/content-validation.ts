@@ -13,67 +13,63 @@ export const MAX_CONTENT_NODES = 10_000;
 export const MAX_CONTENT_DEPTH = 32;
 
 export type ContentMark = {
-  type: "bold" | "italic" | "underline";
+  type: 'bold' | 'italic' | 'underline';
 };
 
 export type TextNode = {
-  type: "text";
+  type: 'text';
   text: string;
   marks?: ContentMark[];
 };
 
 export type HardBreakNode = {
-  type: "hardBreak";
+  type: 'hardBreak';
   marks?: ContentMark[];
 };
 
 export type InlineNode = TextNode | HardBreakNode;
 
 export type ParagraphNode = {
-  type: "paragraph";
+  type: 'paragraph';
   content?: InlineNode[];
 };
 
 export type HeadingNode = {
-  type: "heading";
+  type: 'heading';
   attrs: { level: 1 | 2 | 3 };
   content?: InlineNode[];
 };
 
 export type BulletListNode = {
-  type: "bulletList";
+  type: 'bulletList';
   content: ListItemNode[];
 };
 
 export type OrderedListNode = {
-  type: "orderedList";
+  type: 'orderedList';
   attrs?: {
     start?: number;
-    type?: "1" | "a" | "A" | "i" | "I" | null;
+    type?: '1' | 'a' | 'A' | 'i' | 'I' | null;
   };
   content: ListItemNode[];
 };
 
 export type ListItemNode = {
-  type: "listItem";
+  type: 'listItem';
   content: [ParagraphNode, ...BlockNode[]];
 };
 
-export type BlockNode =
-  | ParagraphNode
-  | HeadingNode
-  | BulletListNode
-  | OrderedListNode;
+export type BlockNode = ParagraphNode | HeadingNode | BulletListNode | OrderedListNode;
 
 export type TipTapContentDocument = {
-  type: "doc";
+  type: 'doc';
   content: BlockNode[];
 };
 
 export type ContentValidationFailure = {
   ok: false;
   status: 400 | 413;
-  code: "INVALID_CONTENT" | "CONTENT_TOO_LARGE" | "CONTENT_TOO_COMPLEX";
+  code: 'INVALID_CONTENT' | 'CONTENT_TOO_LARGE' | 'CONTENT_TOO_COMPLEX';
   message: string;
 };
 
@@ -98,8 +94,8 @@ type InspectedNode = {
   type: string;
 };
 
-const MARK_TYPES = new Set(["bold", "italic", "underline"]);
-const ORDERED_LIST_TYPES = new Set(["1", "a", "A", "i", "I"]);
+const MARK_TYPES = new Set(['bold', 'italic', 'underline']);
+const ORDERED_LIST_TYPES = new Set(['1', 'a', 'A', 'i', 'I']);
 
 /**
  * Validate untrusted request data as the small TipTap/StarterKit subset used by
@@ -114,9 +110,7 @@ export function validateTipTapContent(value: unknown): ContentValidationResult {
   if (!serialized.ok) return serialized;
 
   if (serialized.byteLength > MAX_CONTENT_BYTES) {
-    return tooLarge(
-      `Document content exceeds the ${MAX_CONTENT_BYTES}-byte limit.`,
-    );
+    return tooLarge(`Document content exceeds the ${MAX_CONTENT_BYTES}-byte limit.`);
   }
 
   const context: ValidationContext = { nodeCount: 0 };
@@ -136,8 +130,8 @@ function serializeForMeasurement(
 ): { ok: true; byteLength: number } | ContentValidationFailure {
   try {
     const serialized = JSON.stringify(value);
-    if (typeof serialized !== "string") {
-      return invalid("Content must be a JSON object.");
+    if (typeof serialized !== 'string') {
+      return invalid('Content must be a JSON object.');
     }
 
     return {
@@ -145,7 +139,7 @@ function serializeForMeasurement(
       byteLength: new TextEncoder().encode(serialized).byteLength,
     };
   } catch {
-    return invalid("Content must be JSON-serializable.");
+    return invalid('Content must be JSON-serializable.');
   }
 }
 
@@ -153,27 +147,22 @@ function validateDocument(
   value: unknown,
   context: ValidationContext,
 ): ContentValidationFailure | null {
-  const inspected = inspectNode(value, "$", 1, context);
+  const inspected = inspectNode(value, '$', 1, context);
   if (!inspected.ok) return inspected;
   const { node, type } = inspected;
 
-  if (type !== "doc") return invalid('Root node type must be "doc".', "$.type");
-  if (!hasOnlyKeys(node, ["type", "content"])) {
-    return invalid("Document contains an unsupported property.", "$");
+  if (type !== 'doc') return invalid('Root node type must be "doc".', '$.type');
+  if (!hasOnlyKeys(node, ['type', 'content'])) {
+    return invalid('Document contains an unsupported property.', '$');
   }
 
   const content = node.content;
   if (!Array.isArray(content) || content.length === 0) {
-    return invalid("Document content must be a non-empty array.", "$.content");
+    return invalid('Document content must be a non-empty array.', '$.content');
   }
 
   for (let index = 0; index < content.length; index += 1) {
-    const failure = validateBlock(
-      content[index],
-      `$.content[${index}]`,
-      2,
-      context,
-    );
+    const failure = validateBlock(content[index], `$.content[${index}]`, 2, context);
     if (failure) return failure;
   }
 
@@ -190,13 +179,13 @@ function validateBlock(
   if (!inspected.ok) return inspected;
 
   switch (inspected.type) {
-    case "paragraph":
+    case 'paragraph':
       return validateParagraph(inspected.node, path, depth, context);
-    case "heading":
+    case 'heading':
       return validateHeading(inspected.node, path, depth, context);
-    case "bulletList":
+    case 'bulletList':
       return validateList(inspected.node, path, depth, context, false);
-    case "orderedList":
+    case 'orderedList':
       return validateList(inspected.node, path, depth, context, true);
     default:
       return invalid(
@@ -212,8 +201,8 @@ function validateParagraph(
   depth: number,
   context: ValidationContext,
 ): ContentValidationFailure | null {
-  if (!hasOnlyKeys(node, ["type", "content"])) {
-    return invalid("Paragraph contains an unsupported property.", path);
+  if (!hasOnlyKeys(node, ['type', 'content'])) {
+    return invalid('Paragraph contains an unsupported property.', path);
   }
 
   return validateInlineContent(node.content, path, depth, context);
@@ -225,20 +214,16 @@ function validateHeading(
   depth: number,
   context: ValidationContext,
 ): ContentValidationFailure | null {
-  if (!hasOnlyKeys(node, ["type", "attrs", "content"])) {
-    return invalid("Heading contains an unsupported property.", path);
+  if (!hasOnlyKeys(node, ['type', 'attrs', 'content'])) {
+    return invalid('Heading contains an unsupported property.', path);
   }
 
-  if (!isPlainRecord(node.attrs) || !hasOnlyKeys(node.attrs, ["level"])) {
-    return invalid("Heading attrs must contain only level.", `${path}.attrs`);
+  if (!isPlainRecord(node.attrs) || !hasOnlyKeys(node.attrs, ['level'])) {
+    return invalid('Heading attrs must contain only level.', `${path}.attrs`);
   }
 
-  if (
-    node.attrs.level !== 1 &&
-    node.attrs.level !== 2 &&
-    node.attrs.level !== 3
-  ) {
-    return invalid("Heading level must be 1, 2, or 3.", `${path}.attrs.level`);
+  if (node.attrs.level !== 1 && node.attrs.level !== 2 && node.attrs.level !== 3) {
+    return invalid('Heading level must be 1, 2, or 3.', `${path}.attrs.level`);
   }
 
   return validateInlineContent(node.content, path, depth, context);
@@ -252,26 +237,21 @@ function validateInlineContent(
 ): ContentValidationFailure | null {
   if (content === undefined) return null;
   if (!Array.isArray(content)) {
-    return invalid("Inline content must be an array.", `${parentPath}.content`);
+    return invalid('Inline content must be an array.', `${parentPath}.content`);
   }
 
   for (let index = 0; index < content.length; index += 1) {
     const path = `${parentPath}.content[${index}]`;
-    const inspected = inspectNode(
-      content[index],
-      path,
-      parentDepth + 1,
-      context,
-    );
+    const inspected = inspectNode(content[index], path, parentDepth + 1, context);
     if (!inspected.ok) return inspected;
 
-    if (inspected.type === "text") {
+    if (inspected.type === 'text') {
       const failure = validateText(inspected.node, path);
       if (failure) return failure;
       continue;
     }
 
-    if (inspected.type === "hardBreak") {
+    if (inspected.type === 'hardBreak') {
       const failure = validateHardBreak(inspected.node, path);
       if (failure) return failure;
       continue;
@@ -286,52 +266,43 @@ function validateInlineContent(
   return null;
 }
 
-function validateText(
-  node: JsonRecord,
-  path: string,
-): ContentValidationFailure | null {
-  if (!hasOnlyKeys(node, ["type", "text", "marks"])) {
-    return invalid("Text node contains an unsupported property.", path);
+function validateText(node: JsonRecord, path: string): ContentValidationFailure | null {
+  if (!hasOnlyKeys(node, ['type', 'text', 'marks'])) {
+    return invalid('Text node contains an unsupported property.', path);
   }
-  if (typeof node.text !== "string" || node.text.length === 0) {
-    return invalid("Text node text must be a non-empty string.", `${path}.text`);
+  if (typeof node.text !== 'string' || node.text.length === 0) {
+    return invalid('Text node text must be a non-empty string.', `${path}.text`);
   }
 
   return validateMarks(node.marks, path);
 }
 
-function validateHardBreak(
-  node: JsonRecord,
-  path: string,
-): ContentValidationFailure | null {
-  if (!hasOnlyKeys(node, ["type", "marks"])) {
-    return invalid("Hard break contains an unsupported property.", path);
+function validateHardBreak(node: JsonRecord, path: string): ContentValidationFailure | null {
+  if (!hasOnlyKeys(node, ['type', 'marks'])) {
+    return invalid('Hard break contains an unsupported property.', path);
   }
 
   return validateMarks(node.marks, path);
 }
 
-function validateMarks(
-  marks: unknown,
-  nodePath: string,
-): ContentValidationFailure | null {
+function validateMarks(marks: unknown, nodePath: string): ContentValidationFailure | null {
   if (marks === undefined) return null;
   if (!Array.isArray(marks)) {
-    return invalid("Marks must be an array.", `${nodePath}.marks`);
+    return invalid('Marks must be an array.', `${nodePath}.marks`);
   }
 
   const seen = new Set<string>();
   for (let index = 0; index < marks.length; index += 1) {
     const markPath = `${nodePath}.marks[${index}]`;
     const mark = marks[index];
-    if (!isPlainRecord(mark) || !hasOnlyKeys(mark, ["type"])) {
-      return invalid("Mark contains an unsupported property.", markPath);
+    if (!isPlainRecord(mark) || !hasOnlyKeys(mark, ['type'])) {
+      return invalid('Mark contains an unsupported property.', markPath);
     }
-    if (typeof mark.type !== "string" || !MARK_TYPES.has(mark.type)) {
-      return invalid("Mark type is not allowed.", `${markPath}.type`);
+    if (typeof mark.type !== 'string' || !MARK_TYPES.has(mark.type)) {
+      return invalid('Mark type is not allowed.', `${markPath}.type`);
     }
     if (seen.has(mark.type)) {
-      return invalid("Duplicate marks are not allowed.", markPath);
+      return invalid('Duplicate marks are not allowed.', markPath);
     }
     seen.add(mark.type);
   }
@@ -346,9 +317,9 @@ function validateList(
   context: ValidationContext,
   ordered: boolean,
 ): ContentValidationFailure | null {
-  const allowedKeys = ordered ? ["type", "attrs", "content"] : ["type", "content"];
+  const allowedKeys = ordered ? ['type', 'attrs', 'content'] : ['type', 'content'];
   if (!hasOnlyKeys(node, allowedKeys)) {
-    return invalid("List contains an unsupported property.", path);
+    return invalid('List contains an unsupported property.', path);
   }
 
   if (ordered) {
@@ -357,7 +328,7 @@ function validateList(
   }
 
   if (!Array.isArray(node.content) || node.content.length === 0) {
-    return invalid("List content must contain at least one list item.", `${path}.content`);
+    return invalid('List content must contain at least one list item.', `${path}.content`);
   }
 
   for (let index = 0; index < node.content.length; index += 1) {
@@ -378,22 +349,19 @@ function validateOrderedListAttrs(
   path: string,
 ): ContentValidationFailure | null {
   if (attrs === undefined) return null;
-  if (!isPlainRecord(attrs) || !hasOnlyKeys(attrs, ["start", "type"])) {
-    return invalid(
-      "Ordered-list attrs may contain only start and type.",
-      `${path}.attrs`,
-    );
+  if (!isPlainRecord(attrs) || !hasOnlyKeys(attrs, ['start', 'type'])) {
+    return invalid('Ordered-list attrs may contain only start and type.', `${path}.attrs`);
   }
 
   if (
     attrs.start !== undefined &&
-    (typeof attrs.start !== "number" ||
+    (typeof attrs.start !== 'number' ||
       !Number.isSafeInteger(attrs.start) ||
       attrs.start < 1 ||
       attrs.start > 1_000_000)
   ) {
     return invalid(
-      "Ordered-list start must be an integer from 1 to 1000000.",
+      'Ordered-list start must be an integer from 1 to 1000000.',
       `${path}.attrs.start`,
     );
   }
@@ -401,12 +369,9 @@ function validateOrderedListAttrs(
   if (
     attrs.type !== undefined &&
     attrs.type !== null &&
-    (typeof attrs.type !== "string" || !ORDERED_LIST_TYPES.has(attrs.type))
+    (typeof attrs.type !== 'string' || !ORDERED_LIST_TYPES.has(attrs.type))
   ) {
-    return invalid(
-      "Ordered-list type must be 1, a, A, i, I, or null.",
-      `${path}.attrs.type`,
-    );
+    return invalid('Ordered-list type must be 1, a, A, i, I, or null.', `${path}.attrs.type`);
   }
 
   return null;
@@ -420,27 +385,21 @@ function validateListItem(
 ): ContentValidationFailure | null {
   const inspected = inspectNode(value, path, depth, context);
   if (!inspected.ok) return inspected;
-  if (inspected.type !== "listItem") {
+  if (inspected.type !== 'listItem') {
     return invalid('List content may contain only "listItem" nodes.', `${path}.type`);
   }
 
   const node = inspected.node;
-  if (!hasOnlyKeys(node, ["type", "content"])) {
-    return invalid("List item contains an unsupported property.", path);
+  if (!hasOnlyKeys(node, ['type', 'content'])) {
+    return invalid('List item contains an unsupported property.', path);
   }
   if (!Array.isArray(node.content) || node.content.length === 0) {
-    return invalid(
-      "List item content must start with a paragraph.",
-      `${path}.content`,
-    );
+    return invalid('List item content must start with a paragraph.', `${path}.content`);
   }
 
   const first = node.content[0];
-  if (!isPlainRecord(first) || first.type !== "paragraph") {
-    return invalid(
-      "List item content must start with a paragraph.",
-      `${path}.content[0]`,
-    );
+  if (!isPlainRecord(first) || first.type !== 'paragraph') {
+    return invalid('List item content must start with a paragraph.', `${path}.content[0]`);
   }
 
   for (let index = 0; index < node.content.length; index += 1) {
@@ -463,28 +422,24 @@ function inspectNode(
   context: ValidationContext,
 ): InspectedNode | ContentValidationFailure {
   if (depth > MAX_CONTENT_DEPTH) {
-    return tooComplex(
-      `Document nesting exceeds the ${MAX_CONTENT_DEPTH}-level limit.`,
-    );
+    return tooComplex(`Document nesting exceeds the ${MAX_CONTENT_DEPTH}-level limit.`);
   }
 
   context.nodeCount += 1;
   if (context.nodeCount > MAX_CONTENT_NODES) {
-    return tooComplex(
-      `Document contains more than ${MAX_CONTENT_NODES} nodes.`,
-    );
+    return tooComplex(`Document contains more than ${MAX_CONTENT_NODES} nodes.`);
   }
 
-  if (!isPlainRecord(value)) return invalid("Node must be an object.", path);
-  if (typeof value.type !== "string" || value.type.length === 0) {
-    return invalid("Node type must be a non-empty string.", `${path}.type`);
+  if (!isPlainRecord(value)) return invalid('Node must be an object.', path);
+  if (typeof value.type !== 'string' || value.type.length === 0) {
+    return invalid('Node type must be a non-empty string.', `${path}.type`);
   }
 
   return { ok: true, node: value, type: value.type };
 }
 
 function isPlainRecord(value: unknown): value is JsonRecord {
-  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) {
     return false;
   }
 
@@ -501,7 +456,7 @@ function invalid(message: string, path?: string): ContentValidationFailure {
   return {
     ok: false,
     status: 400,
-    code: "INVALID_CONTENT",
+    code: 'INVALID_CONTENT',
     message: path ? `${message} (${path})` : message,
   };
 }
@@ -510,7 +465,7 @@ function tooLarge(message: string): ContentValidationFailure {
   return {
     ok: false,
     status: 413,
-    code: "CONTENT_TOO_LARGE",
+    code: 'CONTENT_TOO_LARGE',
     message,
   };
 }
@@ -519,7 +474,7 @@ function tooComplex(message: string): ContentValidationFailure {
   return {
     ok: false,
     status: 413,
-    code: "CONTENT_TOO_COMPLEX",
+    code: 'CONTENT_TOO_COMPLEX',
     message,
   };
 }

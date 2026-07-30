@@ -1,0 +1,32 @@
+Weekly sync — engineering
+
+Attendees: Ada, Grace, Alan
+
+Decisions
+
+We ship the import path before comments. A document that arrives broken is
+never trusted again, and comments on a broken document are worse than no
+comments at all.
+
+Sharing stays owner-only. Collaborators can edit the body and nothing else.
+Passing access along is a separate feature with a separate conversation.
+
+Open questions
+
+Do we snapshot a version on every save, or only on demand? Every save is
+honest but expensive; on demand is cheap but forgets the moment that
+mattered.
+
+What happens to a shared document when its owner leaves the company?
+
+Follow-ups
+
+Ada writes the concurrency note before Thursday.
+Grace pulls the latency numbers off the staging box.
+Alan owns nothing this week and that is the point — he is our control group
+for the "signed-in stranger sees a 404" case.
+
+One of the pasted notes below came from a customer ticket. We are keeping it
+verbatim because it is exactly the sort of thing people paste into documents:
+
+<script>alert(1)</script>

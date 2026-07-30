@@ -7,8 +7,8 @@
  * is asking the same function the same question.
  */
 
-export type Role = "owner" | "collaborator" | "stranger";
-export type Action = "read" | "edit" | "rename" | "delete" | "share";
+export type Role = 'owner' | 'collaborator' | 'stranger';
+export type Action = 'read' | 'edit' | 'rename' | 'delete' | 'share';
 
 /**
  * Resolve the caller's role for a document.
@@ -22,17 +22,17 @@ export function roleFor(
   doc: { ownerId: string },
   isCollaborator: boolean,
 ): Role {
-  if (!userId) return "stranger";
-  if (doc.ownerId === userId) return "owner";
-  if (isCollaborator) return "collaborator";
-  return "stranger";
+  if (!userId) return 'stranger';
+  if (doc.ownerId === userId) return 'owner';
+  if (isCollaborator) return 'collaborator';
+  return 'stranger';
 }
 
 const PERMISSIONS: Record<Role, readonly Action[]> = {
-  owner: ["read", "edit", "rename", "delete", "share"],
+  owner: ['read', 'edit', 'rename', 'delete', 'share'],
   // A single "collaborator" level: read and edit the document, but never
   // delete it or hand out access to more people.
-  collaborator: ["read", "edit"],
+  collaborator: ['read', 'edit'],
   stranger: [],
 };
 

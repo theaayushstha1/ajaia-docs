@@ -100,13 +100,7 @@ function isDirty(
   );
 }
 
-function ToolbarButton({
-  label,
-  disabled,
-  onPress,
-  children,
-  active,
-}: ToolbarButtonProps) {
+function ToolbarButton({ label, disabled, onPress, children, active }: ToolbarButtonProps) {
   return (
     <button
       type="button"
@@ -330,9 +324,9 @@ export default function DocumentEditor({
     selector: ({ editor: currentEditor }) => {
       if (!currentEditor) return EMPTY_TOOLBAR_STATE;
 
-      // `isEditable` is false until TipTap's view mounts. Capturing it in the
-      // initial selector snapshot leaves the toolbar disabled because mounting
-      // the view is not itself an editor transaction.
+      // `isEditable` is false until TipTap's view mounts. Capturing it in this
+      // initial selector snapshot leaves the toolbar permanently disabled
+      // because mounting the view is not itself an editor transaction.
       const commandsEnabled = editable;
 
       return {
@@ -344,6 +338,11 @@ export default function DocumentEditor({
         heading3: currentEditor.isActive('heading', { level: 3 }),
         bulletList: currentEditor.isActive('bulletList'),
         orderedList: currentEditor.isActive('orderedList'),
+        // The restricted schema makes each formatting command valid anywhere
+        // text can be entered. Using `editor.can()` here froze every button in
+        // its pre-mount false state on the first render in production; the
+        // selector had no transaction to wake it up until after a command had
+        // already been run. Mount + editability are the honest gate.
         canBold: commandsEnabled,
         canItalic: commandsEnabled,
         canUnderline: commandsEnabled,
@@ -502,7 +501,21 @@ export default function DocumentEditor({
                   editor?.chain().focus().toggleBulletList().run();
                 }}
               >
-                •≡
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M9 6h11M9 12h11M9 18h11" />
+                  <circle cx="4.5" cy="6" r="1.2" fill="currentColor" stroke="none" />
+                  <circle cx="4.5" cy="12" r="1.2" fill="currentColor" stroke="none" />
+                  <circle cx="4.5" cy="18" r="1.2" fill="currentColor" stroke="none" />
+                </svg>
               </ToolbarButton>
               <ToolbarButton
                 label="Numbered list"
@@ -512,7 +525,19 @@ export default function DocumentEditor({
                   editor?.chain().focus().toggleOrderedList().run();
                 }}
               >
-                1.
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M10 6h10M10 12h10M10 18h10" />
+                  <path d="M3.4 4.8l1.3-.6V8M3.2 12.1c0-.6.5-1 1.1-1 .6 0 1.1.4 1.1 1 0 .9-2.2 1.4-2.2 2.9h2.4M3.3 16.4c.2-.4.6-.6 1.1-.6.6 0 1.1.3 1.1.9s-.5.9-1 .9c.6 0 1.1.3 1.1.9s-.5 1-1.2 1c-.5 0-.9-.2-1.1-.6" />
+                </svg>
               </ToolbarButton>
             </div>
 
@@ -526,7 +551,19 @@ export default function DocumentEditor({
                   editor?.chain().focus().undo().run();
                 }}
               >
-                ↶
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M3 8h11a5.5 5.5 0 0 1 0 11H8" />
+                  <path d="M7 4L3 8l4 4" />
+                </svg>
               </ToolbarButton>
               <ToolbarButton
                 label="Redo"
@@ -535,7 +572,19 @@ export default function DocumentEditor({
                   editor?.chain().focus().redo().run();
                 }}
               >
-                ↷
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 8H10a5.5 5.5 0 0 0 0 11h6" />
+                  <path d="M17 4l4 4-4 4" />
+                </svg>
               </ToolbarButton>
             </div>
           </div>

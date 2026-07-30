@@ -1,0 +1,219 @@
+1
+00:00:00,000 --> 00:00:01,432
+This is Ajaia Docs.
+
+2
+00:00:01,432 --> 00:00:06,784
+A document editor with autosave,
+file import, and per document sharing.
+
+3
+00:00:06,784 --> 00:00:11,458
+The dashboard splits what you
+own from what's shared with you.
+
+4
+00:00:11,458 --> 00:00:14,248
+Then the decision I'd defend hardest.
+
+5
+00:00:14,648 --> 00:00:15,840
+Editing is TipTap.
+
+6
+00:00:15,840 --> 00:00:20,278
+Bold, italic, underline, three
+heading levels, and both list types.
+
+7
+00:00:20,278 --> 00:00:25,776
+Every change is debounced and saved
+automatically, seven hundred fifty milliseconds
+
+8
+00:00:25,776 --> 00:00:31,009
+after you stop typing. That's the
+indicator up here going from Saving to Saved.
+
+9
+00:00:31,009 --> 00:00:35,515
+This isn't a text area. Underneath
+it's a structured document model.
+
+10
+00:00:35,915 --> 00:00:38,921
+Hard refresh. It's all still there.
+
+11
+00:00:38,921 --> 00:00:45,620
+Content lives in Postgres as the
+editor's structured J S O N, never as markup.
+
+12
+00:00:45,620 --> 00:00:48,455
+That choice pays off twice later.
+
+13
+00:00:48,855 --> 00:00:53,937
+Import takes plain text, capped at
+two hundred fifty six kilobytes.
+
+14
+00:00:53,937 --> 00:01:00,157
+Look at the last line. That's a script
+tag, and it renders as text, not as markup.
+
+15
+00:01:00,157 --> 00:01:04,025
+The importer puts every
+character into a text node.
+
+16
+00:01:04,025 --> 00:01:08,500
+There's no path where an
+uploaded file becomes live markup.
+
+17
+00:01:08,900 --> 00:01:14,736
+Sharing is by email. Ada owns this
+document. She's giving Grace access. Two roles.
+
+18
+00:01:14,736 --> 00:01:18,223
+Owner reads, edits,
+renames, deletes, and shares.
+
+19
+00:01:18,223 --> 00:01:20,928
+Collaborator reads and edits the body.
+
+20
+00:01:20,928 --> 00:01:26,764
+Renaming is owner only, because the title
+is how this document shows up on someone
+
+21
+00:01:26,764 --> 00:01:27,974
+else's dashboard.
+
+22
+00:01:28,374 --> 00:01:33,112
+Grace opens the same document.
+Her avatar appears in Ada's header.
+
+23
+00:01:33,112 --> 00:01:35,768
+This is a heartbeat, not a websocket.
+
+24
+00:01:35,768 --> 00:01:39,142
+Each client writes a row
+every fifteen seconds.
+
+25
+00:01:39,142 --> 00:01:44,813
+Cloud Run scales to zero, so a container
+has nowhere to hold a live connection.
+
+26
+00:01:44,813 --> 00:01:49,981
+A socket would mean a second always
+on service for something decorative.
+
+27
+00:01:49,981 --> 00:01:52,206
+Someone can appear a poll late.
+
+28
+00:01:52,206 --> 00:01:56,010
+The platform makes the
+cruder design the correct one.
+
+29
+00:01:56,410 --> 00:02:01,107
+Grace types and saves. Ada types
+next, on a copy that's already stale.
+
+30
+00:02:01,107 --> 00:02:05,468
+Her save is refused with a four
+oh nine, and this banner appears.
+
+31
+00:02:05,468 --> 00:02:10,769
+Every save carries the timestamp it was
+based on, so a stale write matches zero
+
+32
+00:02:10,769 --> 00:02:15,332
+rows. Silent clobbering was the
+worst thing about the first version.
+
+33
+00:02:15,732 --> 00:02:19,544
+Grace's window. No Share
+button, no Delete button.
+
+34
+00:02:19,544 --> 00:02:24,118
+Alan, who this was never
+shared with, opens the document id.
+
+35
+00:02:24,118 --> 00:02:27,473
+He gets a four oh
+four, not a four oh three.
+
+36
+00:02:27,473 --> 00:02:31,285
+A four oh three would
+confirm the document exists.
+
+37
+00:02:31,285 --> 00:02:37,308
+Every access goes through one data
+layer, and the permission check lives in the
+
+38
+00:02:37,308 --> 00:02:38,299
+where clause.
+
+39
+00:02:38,699 --> 00:02:42,604
+History lists every version
+with an author and a time.
+
+40
+00:02:42,604 --> 00:02:47,955
+Snapshots happen per editing session,
+not per save, because autosave fires
+
+41
+00:02:47,955 --> 00:02:53,740
+constantly. Restoring takes a snapshot
+first, so the restore is itself undoable.
+
+42
+00:02:53,740 --> 00:02:57,861
+A restore you can't undo is
+worse than no history at all.
+
+43
+00:02:58,261 --> 00:03:04,866
+Export walks the J S O N into Markdown,
+escaping anything Markdown would read as
+
+44
+00:03:04,866 --> 00:03:08,911
+formatting. The mirror of
+the importer's promise.
+
+45
+00:03:09,311 --> 00:03:14,132
+Real time co editing was cut on
+purpose. A half working C R D T loses data.
+
+46
+00:03:14,132 --> 00:03:16,253
+That's a boundary, not a backlog.
+
