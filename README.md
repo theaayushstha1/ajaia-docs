@@ -21,15 +21,23 @@ Demo users (no passwords): `ada@ajaia.demo` · `grace@ajaia.demo` · `alan@ajaia
 
 | Built | Deliberately not built |
 | --- | --- |
-| TipTap editor: bold, italic, underline, three heading levels, ordered and bulleted lists | Real-time co-editing (CRDT / OT / presence) |
-| Autosave debounced at 750 ms, with a Saving / Saved / Couldn't save indicator | Comments, suggestions, version history |
-| Create, rename, edit, reopen, delete documents | Public or link-based sharing |
-| Import `.txt`, capped at 256 KB | Permission tiers beyond owner and collaborator |
-| Share with another user by email; owner can revoke | `.docx` import, any export |
-| Dashboard split into *Owned by me* and *Shared with me* | Real authentication |
-| Postgres 16 on Cloud SQL, deployed to Cloud Run | Pagination, search, folders |
+| TipTap editor: bold, italic, underline, three heading levels, ordered and bulleted lists | Real-time co-editing (CRDT / OT) |
+| Autosave debounced at 750 ms, with a Saving / Saved / Couldn't save indicator | Comments and suggestion mode |
+| **Conflict-safe saves** — a second editor cannot silently overwrite the first | Public or link-based sharing |
+| **Version history with restore**, and the restore is itself undoable | Permission tiers beyond owner and collaborator |
+| **Presence** — who else is viewing this document right now | `.docx` import |
+| **Export to Markdown** | Real authentication |
+| Create, rename, edit, reopen, delete documents | Pagination, search, folders |
+| Import `.txt`, capped at 256 KB | |
+| Share with another user by email; owner can revoke | |
+| Dashboard split into *Owned by me* and *Shared with me* | |
+| Postgres 16 on Cloud SQL, deployed to Cloud Run | |
 
 The cuts are argued in [ARCHITECTURE.md](./ARCHITECTURE.md); the AI process behind them is in [AI-WORKFLOW.md](./AI-WORKFLOW.md).
+
+**About the bolded rows.** The first version shipped without them, and this README said so plainly. Once it was deployed and verified there was time left, so it went to the thing this file had already named as the build's worst flaw: two people editing one document used to overwrite each other silently. Fixing that made the rest cheap. Version history is nearly free once content is structured JSON instead of markup, and so is Markdown export. Presence is a heartbeat table, not a socket.
+
+What did **not** move is the boundary. There is still no real-time co-editing. Telling you someone else is here, and refusing to overwrite them, is honest work for an afternoon. Merging two people's keystrokes live is a different project, and half of one loses data.
 
 ## The authorization model
 
@@ -56,7 +64,7 @@ The cuts are argued in [ARCHITECTURE.md](./ARCHITECTURE.md); the AI process behi
 | Limitation | Why I accepted it | What I'd do with 2 more hours |
 | --- | --- | --- |
 | Autosave is last-write-wins; two people editing the same document silently clobber each other | The alternative inside the timebox was a partial CRDT, and a document tool that loses data is worse than one that never claimed the feature | Add an `updatedAt` precondition to `PATCH` and surface a "this document changed" reload prompt — cheap, honest, no CRDT |
-| Simulated identity, not authentication | The assignment's subject is sharing and access control; real auth would cost an hour and make the reviewer create two accounts before seeing it | Swap `src/lib/session.ts` for Auth.js. Nothing else changes — that is the point of isolating it |
+| Simulated identity, not authentication | The assignment's subject is sharing and access control; real auth would cost an hour and make the reviewer create two accounts before seeing it | Replace the login/session/current-user boundary with Auth.js; the DAL and permission model stay unchanged |
 | Sharing an unknown email returns "No user with that email address" — an account-enumeration oracle | With three fixed demo users there is nothing to enumerate, and a vague error would make the feature untestable | Send an invitation and always return 202, so the response stops depending on whether the account exists |
 | The DAL is a convention, not a database-enforced guarantee | It centralizes authorization into one obvious place, which is most of the value for a fraction of the cost | Postgres row-level security keyed on a session GUC, which turns the convention into an invariant |
 | `.txt` import only | `.docx` conversion is untrusted-input parsing, and mammoth's own docs say it does not sanitize its output | Convert server-side straight into TipTap nodes, never HTML, against the same allowlist |

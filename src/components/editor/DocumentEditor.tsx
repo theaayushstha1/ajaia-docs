@@ -330,7 +330,10 @@ export default function DocumentEditor({
     selector: ({ editor: currentEditor }) => {
       if (!currentEditor) return EMPTY_TOOLBAR_STATE;
 
-      const commandsEnabled = editable && currentEditor.isEditable;
+      // `isEditable` is false until TipTap's view mounts. Capturing it in the
+      // initial selector snapshot leaves the toolbar disabled because mounting
+      // the view is not itself an editor transaction.
+      const commandsEnabled = editable;
 
       return {
         bold: currentEditor.isActive('bold'),
@@ -341,25 +344,14 @@ export default function DocumentEditor({
         heading3: currentEditor.isActive('heading', { level: 3 }),
         bulletList: currentEditor.isActive('bulletList'),
         orderedList: currentEditor.isActive('orderedList'),
-        canBold:
-          commandsEnabled && currentEditor.can().chain().focus().toggleBold().run(),
-        canItalic:
-          commandsEnabled && currentEditor.can().chain().focus().toggleItalic().run(),
-        canUnderline:
-          commandsEnabled && currentEditor.can().chain().focus().toggleUnderline().run(),
-        canHeading1:
-          commandsEnabled &&
-          currentEditor.can().chain().focus().toggleHeading({ level: 1 }).run(),
-        canHeading2:
-          commandsEnabled &&
-          currentEditor.can().chain().focus().toggleHeading({ level: 2 }).run(),
-        canHeading3:
-          commandsEnabled &&
-          currentEditor.can().chain().focus().toggleHeading({ level: 3 }).run(),
-        canBulletList:
-          commandsEnabled && currentEditor.can().chain().focus().toggleBulletList().run(),
-        canOrderedList:
-          commandsEnabled && currentEditor.can().chain().focus().toggleOrderedList().run(),
+        canBold: commandsEnabled,
+        canItalic: commandsEnabled,
+        canUnderline: commandsEnabled,
+        canHeading1: commandsEnabled,
+        canHeading2: commandsEnabled,
+        canHeading3: commandsEnabled,
+        canBulletList: commandsEnabled,
+        canOrderedList: commandsEnabled,
         canUndo: commandsEnabled && currentEditor.can().chain().focus().undo().run(),
         canRedo: commandsEnabled && currentEditor.can().chain().focus().redo().run(),
       };

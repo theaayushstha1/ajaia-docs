@@ -85,8 +85,8 @@ could see the feature the assignment actually asks about.
 There is no credential; impersonation is the intended behaviour. What the
 signature buys is integrity — a client cannot edit the cookie to become someone
 else — and integrity is the only property the authorization layer depends on.
-Replacing it with real auth means replacing `src/lib/session.ts` and nothing
-else.
+Replacing it with real auth means replacing the login, session, and
+current-user boundary. The document DAL and permission model stay unchanged.
 
 ### D4 — Plain-text import only, capped at 256 KB
 **Context.** The brief asks for at least one file type to enter the workflow.
@@ -106,7 +106,8 @@ asserts that `<script>alert(1)</script>` in a `.txt` survives as literal text.
 co-edited live.
 **Reasoning.** Not primarily time. A partially-working CRDT loses data, and a
 document tool that loses data is strictly worse than one that never claimed the
-feature. The honest version of this app at this size is single-writer.
+feature. The honest version here is sequential collaboration with
+last-write-wins saves; simultaneous editors can overwrite one another.
 
 ### D6 — Cloud Run with a Cloud SQL Unix socket
 **Decision.** One container, `--add-cloudsql-instances`, `pg` over the
