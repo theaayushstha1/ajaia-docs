@@ -88,75 +88,9 @@ export const documentShares = pgTable(
   ],
 );
 
-/**
- * A snapshot of a document at a point in time.
- *
- * Written on the transition *into* an editing session, not on every keystroke:
- * autosave fires every 750ms, and a row per autosave would be write
- * amplification wearing a feature's clothes.
- *
- * `createdById` is SET NULL rather than CASCADE — a document's history should
- * survive the departure of the person who wrote it.
- */
-export const documentVersions = pgTable(
-  "document_versions",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    documentId: uuid("document_id")
-      .notNull()
-      .references(() => documents.id, { onDelete: "cascade" }),
-    title: text("title").notNull(),
-    content: jsonb("content").$type<TipTapDoc>().notNull(),
-    createdById: uuid("created_by_id").references(() => users.id, {
-      onDelete: "set null",
-    }),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (t) => [
-    // "History for this document, newest first" is the only read pattern.
-    index("document_versions_doc_created_idx").on(
-      t.documentId,
-      t.createdAt.desc(),
-    ),
-  ],
-);
-
-/**
- * Who is currently looking at a document.
- *
- * Deliberately a table rather than a websocket. Cloud Run scales to zero and
- * bills per request, so a container has nowhere durable to hold a persistent
- * connection — a socket would mean a second always-on service for a feature
- * that is cosmetic. Presence here is a heartbeat plus a staleness window, and
- * nothing has to clean up after a closed tab: stale rows simply stop matching
- * the recency filter.
- */
-export const documentPresence = pgTable(
-  "document_presence",
-  {
-    documentId: uuid("document_id")
-      .notNull()
-      .references(() => documents.id, { onDelete: "cascade" }),
-    userId: uuid("user_id")
-      .notNull()
-      .references(() => users.id, { onDelete: "cascade" }),
-    lastSeenAt: timestamp("last_seen_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-  (t) => [
-    primaryKey({ columns: [t.documentId, t.userId] }),
-    index("document_presence_seen_idx").on(t.documentId, t.lastSeenAt),
-  ],
-);
-
 export type User = typeof users.$inferSelect;
 export type NewUser = typeof users.$inferInsert;
 export type Document = typeof documents.$inferSelect;
 export type NewDocument = typeof documents.$inferInsert;
 export type DocumentShare = typeof documentShares.$inferSelect;
 export type NewDocumentShare = typeof documentShares.$inferInsert;
-export type DocumentVersion = typeof documentVersions.$inferSelect;
-export type DocumentPresence = typeof documentPresence.$inferSelect;
