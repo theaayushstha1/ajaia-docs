@@ -2,15 +2,17 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 import DocumentEditor from '@/components/editor/DocumentEditor';
+import PresenceBar from '@/components/PresenceBar';
 import ShareDialog, { type Collaborator } from '@/components/ShareDialog';
 
 export type WorkspaceProps = {
   docId: string;
   initialTitle: string;
   initialContent: unknown;
+  initialUpdatedAt: string;
   role: 'owner' | 'collaborator';
   ownerName: string;
   currentUserName: string;
@@ -21,6 +23,7 @@ export default function DocumentWorkspace({
   docId,
   initialTitle,
   initialContent,
+  initialUpdatedAt,
   role,
   ownerName,
   currentUserName,
@@ -29,27 +32,54 @@ export default function DocumentWorkspace({
   const router = useRouter();
   const [shareOpen, setShareOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [conflict, setConflict] = useState<{ title: string; updatedAt: string } | null>(null);
+
+  /**
+   * The last `updatedAt` this client knows about, echoed back on every write.
+   * A ref rather than state because it changes on every save and nothing
+   * renders from it — putting it in state would re-render the editor mid-typing.
+   */
+  const lastSeenUpdatedAt = useRef(initialUpdatedAt);
 
   const isOwner = role === 'owner';
 
   /**
-   * The editor owns debouncing and retry state; this just performs the write.
-   * Throwing on a non-OK response is deliberate — the editor surfaces it as
-   * "Couldn't save", which is the only honest thing to show when the server
-   * rejected the change.
+   * The editor owns debouncing and retry state; this performs the write.
+   *
+   * Every save carries the `updatedAt` we last saw. If someone else has
+   * written in the meantime the server refuses with a 409 instead of letting
+   * us overwrite them, and we surface that as a banner rather than a silent
+   * success. This is the fix for the last-write-wins hole — two people on one
+   * document no longer clobber each other without either of them knowing.
    */
   const handleSave = useCallback(
     async (patch: { title?: string; content?: unknown }) => {
       const response = await fetch(`/api/documents/${docId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(patch),
+        body: JSON.stringify({ ...patch, expectedUpdatedAt: lastSeenUpdatedAt.current }),
       });
 
+      const body = await response.json().catch(() => ({}));
+
+      if (response.status === 409) {
+        setConflict({
+          title: body?.conflict?.title ?? 'this document',
+          updatedAt: body?.conflict?.updatedAt ?? '',
+        });
+        // Throw so the editor shows "Couldn't save" rather than pretending the
+        // change landed. The banner explains why.
+        throw new Error('Changed by someone else');
+      }
+
       if (!response.ok) {
-        const body = await response.json().catch(() => ({}));
         throw new Error(body.error ?? `Save failed (${response.status})`);
       }
+
+      // Carry the new token forward so the next write is checked against the
+      // state we just created, not the one we loaded the page with.
+      if (body?.updatedAt) lastSeenUpdatedAt.current = body.updatedAt;
+      setConflict(null);
 
       // Keep the dashboard's "last edited" ordering honest without a refetch here.
       if (patch.title !== undefined) router.refresh();
@@ -79,6 +109,24 @@ export default function DocumentWorkspace({
 
   return (
     <div className="min-h-dvh bg-subtle">
+      {conflict && (
+        <div
+          role="alert"
+          className="border-b border-rule-strong bg-danger-soft px-4 py-3 text-center text-sm text-danger"
+        >
+          <span className="font-medium">Someone else edited this document.</span> Your last
+          change was not saved, so their work is intact. Reload to see the current version —
+          anything you typed since is still on screen, so copy it first if you need it.
+          <button
+            type="button"
+            onClick={() => router.refresh()}
+            className="ml-3 rounded-md border border-rule-strong px-2.5 py-1 text-xs font-medium transition-colors hover:bg-sheet"
+          >
+            Reload
+          </button>
+        </div>
+      )}
+
       <header className="sticky top-0 z-20 border-b border-rule bg-sheet/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center gap-4 px-4 py-2.5">
           <Link
@@ -108,6 +156,10 @@ export default function DocumentWorkspace({
                 Shared by {ownerName}
               </span>
             )}
+            {/* Renders nothing when nobody else is here — presence should be
+                invisible until it is informative. */}
+            <PresenceBar docId={docId} />
+
             <span className="hidden text-xs text-ink-muted sm:inline">{currentUserName}</span>
 
             {isOwner && (
