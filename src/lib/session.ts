@@ -29,7 +29,12 @@ const MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
  * harder to see in Cloud Build logs.
  */
 function sessionSecret(): string {
-  const secret = process.env.SESSION_SECRET;
+  // Trim deliberately. Secret Manager stores exactly the bytes it was given,
+  // and the usual `echo ... | gcloud secrets create` leaves a trailing
+  // newline, so the deployed value is "abc\n" while a local .env.local parses
+  // the same secret as "abc". Signatures then verify locally and fail in
+  // production only — every session silently rejected, with no error anywhere.
+  const secret = process.env.SESSION_SECRET?.trim();
   if (secret && secret.length >= 32) return secret;
 
   if (process.env.NODE_ENV === 'production') {

@@ -17,7 +17,9 @@ function buildConfig(): PoolConfig {
 
   const base: PoolConfig = {
     user: process.env.DB_USER ?? "postgres",
-    password: process.env.DB_PASSWORD,
+    // Trimmed for the same reason as SESSION_SECRET: secrets delivered as env
+    // vars routinely carry a trailing newline that only exists in production.
+    password: process.env.DB_PASSWORD?.trim(),
     database: process.env.DB_NAME ?? "ajaia",
     // Cloud Run scales to zero and can fan out to many instances; keep each
     // container's footprint small so we don't exhaust Cloud SQL connections.
