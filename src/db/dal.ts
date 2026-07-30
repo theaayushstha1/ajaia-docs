@@ -1,6 +1,6 @@
 import 'server-only';
 
-import { and, desc, eq, or } from 'drizzle-orm';
+import { and, desc, eq, gte, lt, or } from 'drizzle-orm';
 
 import { db } from '@/db/client';
 import {
@@ -176,8 +176,16 @@ export async function updateDocument(
   patch: { title?: string; content?: TipTapDoc },
   expectedUpdatedAt?: Date,
 ): Promise<Document> {
+  // PostgreSQL timestamps can retain microseconds while JavaScript Dates and
+  // ISO strings only carry milliseconds. Match the millisecond represented by
+  // the client's token rather than requiring precision the client cannot echo
+  // back. A genuinely newer write still falls outside this half-open window.
   const where = expectedUpdatedAt
-    ? and(eq(documents.id, documentId), eq(documents.updatedAt, expectedUpdatedAt))
+    ? and(
+        eq(documents.id, documentId),
+        gte(documents.updatedAt, expectedUpdatedAt),
+        lt(documents.updatedAt, new Date(expectedUpdatedAt.getTime() + 1)),
+      )
     : eq(documents.id, documentId);
 
   const [updated] = await db

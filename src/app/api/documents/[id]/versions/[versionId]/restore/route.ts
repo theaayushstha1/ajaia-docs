@@ -17,8 +17,9 @@ function errorResponse(error: unknown) {
 
 /**
  * POST /api/documents/[id]/versions/[versionId]/restore — put an old version
- * back. Requires edit; the current state is snapshotted first so the restore
- * can itself be undone.
+ * back. Owner only because a stored version includes the title as well as the
+ * body; the current state is snapshotted first so the restore can itself be
+ * undone.
  */
 export async function POST(
   _request: Request,

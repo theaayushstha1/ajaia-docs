@@ -121,7 +121,7 @@ export default function DocumentWorkspace({
           anything you typed since is still on screen, so copy it first if you need it.
           <button
             type="button"
-            onClick={() => router.refresh()}
+            onClick={() => window.location.reload()}
             className="ml-3 rounded-md border border-rule-strong px-2.5 py-1 text-xs font-medium transition-colors hover:bg-sheet"
           >
             Reload
@@ -242,13 +242,13 @@ export default function DocumentWorkspace({
       {historyOpen && (
         <VersionHistory
           docId={docId}
-          canEdit
+          canEdit={isOwner}
           onRestored={() => {
             setHistoryOpen(false);
             setConflict(null);
-            // A restore rewrites the row, so every token this client holds is
-            // stale. Refetch rather than trying to reconcile in place.
-            router.refresh();
+            // A restore rewrites both server state and the concurrency token.
+            // Remount the editor so its local TipTap state cannot stay stale.
+            window.location.reload();
           }}
           onClose={() => setHistoryOpen(false)}
         />

@@ -144,7 +144,9 @@ export async function restoreVersion(
   documentId: string,
   userId: string,
 ): Promise<Document> {
-  const { doc } = await requireDocument(documentId, userId, "edit");
+  // A version contains the title as well as the body. Restoring it can rename
+  // the document, so it must obey the same owner-only rule as a direct rename.
+  const { doc } = await requireDocument(documentId, userId, "rename");
 
   // Read the target *before* snapshotting. The snapshot pushes history over the
   // limit and prunes the oldest row, which can be this very version — reading
